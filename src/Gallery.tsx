@@ -1,0 +1,206 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { LazyMotion, domMax, type MotionValue } from 'motion/react'
+import * as m from 'motion/react-m'
+import { cropOf } from './crop.js'
+import {
+  DEFAULT_ICONS,
+  DEFAULT_LABELS,
+  IconButton,
+  Lightbox,
+  preload,
+  useNaturalSizes,
+  type Crop,
+  type LightboxItem,
+  type LightboxProps,
+} from './Lightbox.js'
+import { GAP, useTrack, useTrackPlace } from './track.js'
+
+export interface GalleryProps<T extends LightboxItem = LightboxItem>
+  extends Omit<LightboxProps<T>, 'index' | 'open' | 'onClose' | 'onExited' | 'origin' | 'originCrop'> {
+  /** The box's width over its height. Default 1, a square. */
+  aspect?: number
+  /**
+   * Cut pictures off at the box's edges as they slide. Default true. Turn it
+   * off and they slide out past the edges instead, fading as they go.
+   */
+  clip?: boolean
+}
+
+/**
+ * A small lightbox for the page: one picture at a time in a box, cropped to
+ * its `focus` and `zoom`, on the same track as the lightbox. Drag it, flick
+ * it or use the arrows; click the picture and the lightbox opens out of it
+ * with the whole picture. Takes the lightbox's props and passes them on.
+ * `className` goes on both.
+ */
+export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, ...props }: GalleryProps<T>) {
+  const { items, caption, className, onIndexChange, radius = 12 } = props
+  const labels = { ...DEFAULT_LABELS, ...props.labels }
+  const icons = { ...DEFAULT_ICONS, ...props.icons }
+  const n = items.length
+  const natural = useNaturalSizes(items)
+  const crop = (i: number) => cropOf({ ...items[i], ...natural(items[i]) }, aspect)
+
+  const box = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+  useLayoutEffect(() => {
+    const el = box.current!
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Every picture is the box's size, so a neighbour is one box and a gap away.
+  const step = width + GAP
+  const track = useTrack(n, 0, () => [step, step])
+  const { index, prev, next, many, x, go } = track
+  const shown = useRef(index)
+  useEffect(() => {
+    if (index === shown.current) return
+    shown.current = index
+    onIndexChange?.(index)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index])
+
+  const [open, setOpen] = useState(false)
+  // A drag ends in a click. That one shouldn't open the lightbox.
+  const dragged = useRef(false)
+
+  return (
+    <div
+      className={['rml-gallery', className].filter(Boolean).join(' ')}
+      onKeyDown={(event) => {
+        // The lightbox's keys bubble up here through React's tree as well.
+        if (open || !many || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+        go(event.key === 'ArrowRight' ? 1 : -1)
+        event.preventDefault()
+      }}
+    >
+      <LazyMotion features={domMax}>
+        <m.div
+          ref={box}
+          className="rml-gallery-box"
+          data-clip={clip || undefined}
+          style={{ aspectRatio: aspect }}
+          onPointerDown={() => (dragged.current = false)}
+          onPanStart={track.panStart}
+          onPan={(_, info) => {
+            dragged.current = true
+            track.pan(info.offset.x)
+          }}
+          onPanEnd={(_, info) => track.panEnd(info.velocity.x)}
+        >
+          {width > 0 &&
+            [
+              // Keyed by item, so the one moving into the middle stays the same element.
+              ...(many && prev !== next ? [{ i: prev, at: -step }] : []),
+              { i: index, at: 0 },
+              ...(many ? [{ i: next, at: step }] : []),
+            ].map(({ i, at }) => (
+              <Slide
+                key={i}
+                item={items[i]}
+                index={i}
+                label={items[i].alt || `${i + 1} / ${n}`}
+                crop={crop(i)}
+                width={width}
+                x={x}
+                at={at}
+                step={step}
+                radius={radius}
+                fade={!clip}
+                onOpen={() => {
+                  if (dragged.current) return
+                  track.jump(i)
+                  setOpen(true)
+                }}
+              />
+            ))}
+        </m.div>
+      </LazyMotion>
+
+      {(caption || many) && (
+        <div className="rml-gallery-foot">
+          <p className="rml-gallery-caption">{caption?.(items[index], index)}</p>
+          {many && (
+            <div className="rml-gallery-nav">
+              <IconButton label={labels.previous} onClick={() => go(-1)}>
+                {icons.previous}
+              </IconButton>
+              <span className="rml-count" aria-live="polite">{`${index + 1} / ${n}`}</span>
+              <IconButton label={labels.next} onClick={() => go(1)}>
+                {icons.next}
+              </IconButton>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Lightbox
+        {...props}
+        index={index}
+        open={open}
+        onClose={() => setOpen(false)}
+        // The gallery follows along underneath, so the lightbox closes back
+        // into whichever picture it ended on.
+        onIndexChange={track.jump}
+        origin={(i) => box.current?.querySelector(`[data-index="${i}"]`)}
+        originCrop={crop}
+      />
+    </div>
+  )
+}
+
+/** One picture in the box: the whole of it, moved and scaled so the box shows just its crop. */
+function Slide({
+  item,
+  index,
+  label,
+  crop: [left, top, w, h],
+  width,
+  x,
+  at,
+  step,
+  radius,
+  fade,
+  onOpen,
+}: {
+  item: LightboxItem
+  index: number
+  label: string
+  crop: Crop
+  width: number
+  x: MotionValue<number>
+  at: number
+  step: number
+  radius: number
+  fade: boolean
+  onOpen: () => void
+}) {
+  const place = useTrackPlace(x, at, [step, step])
+  const current = at === 0
+  return (
+    <m.button
+      type="button"
+      className="rml-gallery-slide"
+      data-index={index}
+      style={{ x: place.left, opacity: fade ? place.opacity : 1, borderRadius: radius }}
+      tabIndex={current ? 0 : -1}
+      aria-hidden={!current || undefined}
+      aria-label={label}
+      onClick={onOpen}
+      // Start on the full-size picture as soon as a click looks likely.
+      onPointerEnter={() => void preload(item)}
+      onFocus={() => void preload(item)}
+    >
+      <img
+        src={item.kind === 'image' ? item.src : item.poster}
+        srcSet={item.kind === 'image' ? item.srcSet : undefined}
+        sizes={`${Math.ceil(width / w)}px`}
+        style={{ width: `${100 / w}%`, height: `${100 / h}%`, left: `${(-left / w) * 100}%`, top: `${(-top / h) * 100}%` }}
+        alt=""
+        draggable={false}
+      />
+    </m.button>
+  )
+}

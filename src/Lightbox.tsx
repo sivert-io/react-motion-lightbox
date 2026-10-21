@@ -3,6 +3,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ButtonHTMLAttributes,
   type CSSProperties,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -38,6 +39,10 @@ export interface LightboxItem {
   poster?: string
   /** A small image for the thumbnail row. Defaults to `src` (or `poster`). */
   thumb?: string
+  /** What a cropped view of it centres on, as fractions of it: x, y. Default the middle. See `cropOf`. */
+  focus?: [number, number]
+  /** How far a cropped view zooms in on `focus`. 1, the default, is the biggest crop that fits. */
+  zoom?: number
 }
 
 /** A region of the picture, as fractions of it: left, top, width, height. */
@@ -100,12 +105,17 @@ const svg = (d: string) => (
     <path d={d} />
   </svg>
 )
-const DEFAULT_ICONS: LightboxIcons = {
+export const DEFAULT_ICONS: LightboxIcons = {
   close: svg('M200 56 56 200M56 56l144 144'),
   previous: svg('M160 208 80 128l80-80'),
   next: svg('m96 48 80 80-80 80'),
 }
-const DEFAULT_LABELS: LightboxLabels = { dialog: 'Image viewer', close: 'Close', previous: 'Previous', next: 'Next' }
+export const DEFAULT_LABELS: LightboxLabels = { dialog: 'Image viewer', close: 'Close', previous: 'Previous', next: 'Next' }
+
+/** A round button with an icon, labelled for screen readers and with a tooltip for the mouse. */
+export function IconButton({ label, className, ...rest }: { label: string } & ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type="button" className={['rml-button', className].filter(Boolean).join(' ')} aria-label={label} title={label} {...rest} />
+}
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const
 const WHOLE: Crop = [0, 0, 1, 1]
@@ -158,6 +168,9 @@ function overThumb(frame: HTMLElement, thumb: DOMRect, crop: Crop) {
  * scale on every frame, keeping it exactly `radius` on screen the whole way.
  */
 function morph(el: HTMLElement, at: ReturnType<typeof overThumb>, crop: Crop, radius: number, from: 0 | 1, to: 0 | 1, duration: number) {
+  // The view clips pictures at its top and bottom; the way to and from the
+  // thumbnail can run past both.
+  el.parentElement?.style.setProperty('overflow', 'visible')
   const apply = (p: number) => {
     const scale = at.scale + (1 - at.scale) * p
     const shown = crop.map((v, i) => v + (WHOLE[i] - v) * p) as Crop
@@ -173,21 +186,34 @@ function morph(el: HTMLElement, at: ReturnType<typeof overThumb>, crop: Crop, ra
 /** Back to rest, unclipped, so pictures can slide past its edges. */
 const rest = (el: HTMLElement) => {
   for (const prop of ['transform', 'transform-origin', 'clip-path', '--rml-r']) el.style.removeProperty(prop)
+  el.parentElement?.style.removeProperty('overflow')
 }
 
-/** Without a thumbnail to grow out of: a short fade and scale. */
+/**
+ * The backdrop's colour and blur, from none (0) to full (1), over the same
+ * time and curve as the picture's move: they rise as it opens out of the
+ * thumbnail and settle as it goes back, in one motion with it.
+ */
+function backdrop(dialog: HTMLElement | null, from: 0 | 1, to: 0 | 1, duration: number) {
+  const apply = (p: number) => dialog?.style.setProperty('--rml-p', String(p))
+  apply(from)
+  return animate(from, to, { duration, ease: EASE_OUT, onUpdate: apply })
+}
+
+/** Without a thumbnail to grow out of: a short fade and scale, in seconds. */
+const FADE = 0.22
 const fade = (el: HTMLElement, into: boolean) =>
   el.animate(
     [
       { opacity: 0, transform: 'scale(0.96)' },
       { opacity: 1, transform: 'none' },
     ],
-    { duration: 220, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', direction: into ? 'normal' : 'reverse', fill: 'forwards' },
+    { duration: FADE * 1000, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', direction: into ? 'normal' : 'reverse', fill: 'forwards' },
   ).finished
 
 // ── Sizes of items that don't say ───────────────────────────────────────────
 
-function useNaturalSizes(items: LightboxItem[]) {
+export function useNaturalSizes(items: LightboxItem[]) {
   const [sizes, setSizes] = useState<Record<string, { width: number; height: number }>>({})
   useEffect(() => {
     let live = true
@@ -358,10 +384,12 @@ function View<T extends LightboxItem>({
     const from = rectOf(origin?.(start))
     if (!from) {
       void fade(el, true)
+      void backdrop(dialog.current, 0, 1, FADE)
       return
     }
     const crop = originCrop?.(start) ?? WHOLE
     void morph(el, overThumb(el, from, crop), crop, radius, 0, 1, 0.5).then(() => rest(el))
+    void backdrop(dialog.current, 0, 1, 0.5)
   }, [box.width, origin, originCrop, start, radius])
 
   // The next and previous items, ready before they are needed.
@@ -563,9 +591,9 @@ function View<T extends LightboxItem>({
         const to = rectOf(origin?.(index))
         if (to) {
           const crop = originCrop?.(index) ?? WHOLE
-          await morph(el, overThumb(el, to, crop), crop, radius, 1, 0, 0.45)
+          await Promise.all([morph(el, overThumb(el, to, crop), crop, radius, 1, 0, 0.45), backdrop(dialog.current, 1, 0, 0.45)])
         } else {
-          await fade(el, false)
+          await Promise.all([fade(el, false), backdrop(dialog.current, 1, 0, FADE)])
         }
       }
       if (cancelled) return
@@ -621,17 +649,17 @@ function View<T extends LightboxItem>({
         <div className="rml-title">{title?.(item, index)}</div>
         <div className="rml-toolbar">
           {toolbar?.(item, index)}
-          <button className="rml-button rml-close" type="button" aria-label={labels.close} title={labels.close} onClick={onClose}>
+          <IconButton className="rml-close" label={labels.close} onClick={onClose}>
             {icons.close}
-          </button>
+          </IconButton>
         </div>
       </div>
 
       <div className="rml-stage">
         {many && (
-          <button className="rml-button rml-nav" type="button" aria-label={labels.previous} title={labels.previous} onClick={() => go(-1)}>
+          <IconButton className="rml-nav" label={labels.previous} onClick={() => go(-1)}>
             {icons.previous}
-          </button>
+          </IconButton>
         )}
 
         <m.div
@@ -673,9 +701,9 @@ function View<T extends LightboxItem>({
         </m.div>
 
         {many && (
-          <button className="rml-button rml-nav" type="button" aria-label={labels.next} title={labels.next} onClick={() => go(1)}>
+          <IconButton className="rml-nav" label={labels.next} onClick={() => go(1)}>
             {icons.next}
-          </button>
+          </IconButton>
         )}
       </div>
 

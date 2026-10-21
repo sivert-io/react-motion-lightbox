@@ -24,6 +24,8 @@ Try it at [lightbox.gullberg.no](https://lightbox.gullberg.no).
 
 You can draw videos with your own player, and put your own buttons and text at the top.
 
+There's also a small one for the page, `Gallery`. It shows one picture at a time in a box, cropped to the part you choose, and opens the lightbox when you click it.
+
 ## Install
 
 ```sh
@@ -73,11 +75,36 @@ export function Gallery() {
 }
 ```
 
+## Gallery
+
+```tsx
+import { Gallery } from 'react-motion-lightbox'
+
+<Gallery
+  items={[
+    { kind: 'image', src: '/photos/fjord.jpg', width: 5200, height: 3464, focus: [0.78, 0.45], zoom: 1.6 },
+    { kind: 'image', src: '/photos/harbour.jpg', width: 6000, height: 4000 },
+  ]}
+  caption={(item) => item.alt}
+/>
+```
+
+Each picture fills the box. `focus` is the point the box centres on, as fractions of the picture, and `zoom` is how far it zooms in on it. Leave them out and you get the middle. Drag it, flick it or use the arrows to move through. Click the picture and the lightbox opens out of exactly what was in the box, and shows the whole picture.
+
+It takes the same props as the lightbox and passes them on. On top of those:
+
+| Prop | |
+|---|---|
+| `aspect` | The box's width over its height. Default `1`, a square. |
+| `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
+
+`className` goes on both the gallery and the lightbox. `cropOf(item, aspect)` gives you the same crop, if you build your own.
+
 ## Props
 
 | Prop | |
 |---|---|
-| `items` | `{ kind: 'image' \| 'video', src, srcSet?, sizes?, alt?, width?, height?, poster?, thumb? }[]`. If you leave out `width` and `height`, it measures the item once it loads. |
+| `items` | `{ kind: 'image' \| 'video', src, srcSet?, sizes?, alt?, width?, height?, poster?, thumb?, focus?, zoom? }[]`. If you leave out `width` and `height`, it measures the item once it loads. |
 | `index`, `open` | Which item to show, and whether the lightbox is open. Change `index` while it's open and it moves there. |
 | `onClose` | Someone pressed Esc or the close button. Set `open` to `false` and it animates out. |
 | `onIndexChange(index)` | The item on screen changed. |
@@ -106,6 +133,7 @@ Set these on `.rml`, or on a class you pass in `className`:
 ```css
 .rml.my-lightbox {
   --rml-backdrop: rgb(0 0 0 / 0.92);
+  --rml-blur: 0px;
   --rml-color: #f4f4f5;
   --rml-muted: #a1a1aa;
   --rml-border: rgb(255 255 255 / 0.2);
@@ -117,9 +145,15 @@ Set these on `.rml`, or on a class you pass in `className`:
   --rml-caption-size: 0.75rem;
   --rml-thumb-size: 3.5rem;
   --rml-thumb-radius: 0.375rem;
+  --rml-frame: #e0b04a;
+  --rml-frame-width: 2px;
   --rml-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 ```
+
+`--rml-blur` blurs the page behind. It rises and settles with the picture as it opens and closes, together with the backdrop. `--rml-frame` is the frame around the current thumbnail.
+
+The gallery uses the same variables, set on `.rml-gallery`. Its text and buttons take the page's colour unless you set them.
 
 ## What I haven't tested
 

@@ -121,55 +121,6 @@ a {
   text-decoration-thickness: 2px;
 }
 
-/* One album: a square the photos slide through (Album.tsx). Clipped just
- * outside the square, so the focus ring still shows. */
-.stage {
-  position: relative;
-  aspect-ratio: 1;
-  max-width: 100%;
-  touch-action: pan-y;
-  clip-path: inset(-6px);
-}
-.slide {
-  position: absolute;
-  inset: 0;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-tile);
-  overflow: hidden;
-  background: var(--paper-3);
-  cursor: grab;
-  will-change: transform;
-}
-.stage:active .slide {
-  cursor: grabbing;
-}
-.slide img {
-  position: absolute;
-  max-width: none;
-  user-select: none;
-}
-.arrow {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--paper-2);
-  color: var(--ink);
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background-color 150ms var(--ease-out);
-}
-.arrow:hover {
-  background: var(--paper-3);
-}
-.arrow:active {
-  translate: 0 1px;
-}
-
 /* Code: a plain block on the raised paper, no fake window chrome. */
 pre {
   margin: 0;
@@ -197,12 +148,19 @@ code {
   --rml-accent: var(--accent);
   --rml-focus: var(--focus);
   --rml-caption-size: 0.875rem;
-  backdrop-filter: blur(8px);
+  --rml-blur: 10px;
+}
+
+/* The albums on the page take the page's colours. */
+.rml-gallery.demo {
+  --rml-muted: var(--muted);
+  --rml-border: var(--rule);
+  --rml-accent: var(--accent);
+  --rml-focus: var(--focus);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .link,
-  .arrow {
+  .link {
     transition: none;
   }
 }

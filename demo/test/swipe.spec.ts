@@ -8,7 +8,7 @@ test('quick swipes land on the photo the counter says', async ({ page }) => {
   await page.goto('/')
   const album = page.locator('#norway')
   await album.scrollIntoViewIfNeeded()
-  const box = (await album.locator('.stage').boundingBox())!
+  const box = (await album.locator('.rml-gallery-box').boundingBox())!
   const y = box.y + box.height / 2
   for (let i = 0; i < 3; i++) {
     await page.mouse.move(box.x + box.width * 0.8, y)
@@ -18,9 +18,9 @@ test('quick swipes land on the photo the counter says', async ({ page }) => {
     await page.waitForTimeout(120)
   }
   await page.waitForTimeout(1500)
-  const count = await album.locator('[aria-live]').textContent()
+  const count = await album.locator('.rml-count').textContent()
   const current = Number(count!.split('/')[0]) - 1
-  const lefts = await album.locator('.slide').evaluateAll((els) =>
+  const lefts = await album.locator('.rml-gallery-slide').evaluateAll((els) =>
     els.map((el) => [Number((el as HTMLElement).dataset.index), Math.round(el.getBoundingClientRect().left)]),
   )
   // Only the current photo sits in the box; its neighbours are a step away.

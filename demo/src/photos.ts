@@ -5,10 +5,6 @@ export interface Photo extends LightboxItem {
   thumb: string
   photographer: string
   profile: string
-  /** What the album's square is centred on, as fractions of the photo. Default the middle. */
-  focus?: [number, number]
-  /** How far the square zooms in on it. 1 is the biggest square that fits. */
-  zoom?: number
 }
 
 type Framing = Pick<Photo, 'focus' | 'zoom'>

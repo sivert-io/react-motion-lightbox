@@ -77,15 +77,16 @@ export function App() {
           <Step n={2} title="Describe your photos">
             <p>
               Give it a width and height if you know them. If you don't, it measures each photo when it loads. A{' '}
-              <code>srcSet</code> lets a phone download a smaller file than a 4K screen.
+              <code>srcSet</code> lets a phone download a smaller file than a 4K screen. <code>focus</code> and{' '}
+              <code>zoom</code> pick the part the album's square shows.
             </p>
             <Code name="One photo">{itemSource}</Code>
           </Step>
-          <Step n={3} title="Open it from your own photos">
+          <Step n={3} title="Put them in a Gallery">
             <p>
-              This is the whole <code>Album</code> component on this page. The small album runs on{' '}
-              <code>useTrack</code>, the same track the lightbox moves on. <code>origin</code> tells the lightbox which
-              photo to grow out of, and <code>originCrop</code> which part of it the square shows.
+              This is the whole <code>Album</code> component on this page. <code>Gallery</code> is the small lightbox:
+              one photo at a time, on the same track the big one moves on. It takes the lightbox's props and passes them
+              on.
             </p>
             <Code name="Album.tsx">{albumSource.trim()}</Code>
           </Step>
