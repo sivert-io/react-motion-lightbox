@@ -22,14 +22,27 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
  */
 export const SLOW = 1.2;
 /**
- * The focus scene gets HOLD more story frames from HOLD_AT on: everything
- * else stands still while the square moves round the car (see `useRawFrame`).
+ * Holds: at story frame `at`, everything stands still for `len` more story
+ * frames. One keeps the title up; in the other the square moves round the
+ * car (see `holdClock`).
  */
-const HOLD_AT = 590;
-const HOLD = 48;
-export const STORY_FRAMES = 1110 + HOLD;
+const HOLDS = [
+  { at: 30, len: 30 },
+  { at: 590, len: 48 },
+];
+export const STORY_FRAMES = 1110 + HOLDS.reduce((n, h) => n + h.len, 0);
 const useRawFrame = () => useCurrentFrame() / SLOW;
-const warp = (raw: number) => (raw < HOLD_AT ? raw : raw < HOLD_AT + HOLD ? HOLD_AT : raw - HOLD);
+const warp = (raw: number) => {
+  let t = raw;
+  for (const h of HOLDS) {
+    if (t < h.at) return t;
+    if (t < h.at + h.len) return h.at;
+    t -= h.len;
+  }
+  return t;
+};
+/** Story frames into hold `i`, counting from the moment it starts. */
+const holdClock = (raw: number, i: number) => raw - HOLDS.slice(0, i).reduce((n, h) => n + h.len, 0) - HOLDS[i].at;
 const useFrame = () => warp(useRawFrame());
 /** 0 before `from`, 1 after `from + dur` story frames, eased in between. */
 const ease = (frame: number, from: number, dur: number, easing = OUT) =>
@@ -48,10 +61,23 @@ const STREET: Photo = { id: "dmf546pckjQ", w: 4000, h: 6000, focus: [0.55, 0.3],
 const CAR: Photo = { id: "28RaDBx9F3g", w: 5892, h: 3939, focus: [0.46, 0.6] };
 const HALLSTATT: Photo = { id: "q2dUSl9S4Xg", w: 6691, h: 4281 };
 const VERNAZZA: Photo = { id: "cYrMQA7a3Wc", w: 2400, h: 1600 };
-/** Out and About, on the gallery's track. */
-const ALBUM = [PIGEON, DEER, RED, CHAIR, STREET];
+const COWBOY: Photo = { id: "bT1brkJbOgQ", w: 5464, h: 8192, focus: [0.5, 0.25], zoom: 1.4 };
+const BLAZER: Photo = { id: "FyVM48yP-S4", w: 4000, h: 6000, focus: [0.55, 0.25], zoom: 1.8 };
+const BUILDING: Photo = { id: "nV1HMjvlOj4", w: 6862, h: 4538, focus: [0.67, 0.5], zoom: 1.4 };
+const DARK: Photo = { id: "UegxIJUTX5E", w: 3862, h: 4827, focus: [0.45, 0.3], zoom: 1.2 };
+const HIKER: Photo = { id: "uqG-p4lBxwk", w: 3393, h: 5090, focus: [0.5, 0.75], zoom: 1.3 };
+const LAKE: Photo = { id: "NwmR1EDtiFg", w: 5228, h: 3485, focus: [0.5, 0.62], zoom: 1.2 };
+const STORM: Photo = { id: "25hQHxmHg94", w: 5271, h: 6588, focus: [0.48, 0.5], zoom: 1.3 };
+/**
+ * The desktop gallery's track. The flick lands on 4, the peek on 6, and the
+ * last move on the car at 9, which opens straight into the focus point.
+ */
+const ALBUM = [PIGEON, DEER, RED, CHAIR, STREET, COWBOY, BLAZER, BUILDING, DARK, CAR, HIKER, LAKE, STORM];
+/** The phone's gallery. */
+const PHONE_ALBUM = [PIGEON, DEER, RED, CHAIR, STREET];
 /** The whole of Out and About, for the grid it folds out of. */
-const GRID = ["dmf546pckjQ", "B4H-44aAzqc", "2echtVPwylU", "wIZpOCdTb8I", "cA6DjKN2vaw", "FyVM48yP-S4", "4sVimJidmpQ", "nV1HMjvlOj4", "41lvjsoCJKA"];
+// The pigeon is in the middle: it's the front of the album, and the rest fold in behind it.
+const GRID = ["dmf546pckjQ", "cA6DjKN2vaw", "2echtVPwylU", "wIZpOCdTb8I", "B4H-44aAzqc", "FyVM48yP-S4", "4sVimJidmpQ", "nV1HMjvlOj4", "41lvjsoCJKA"];
 /** For the full-screen lightbox's thumbnail row. */
 const FURTHER = ["28RaDBx9F3g", "q2dUSl9S4Xg", "cYrMQA7a3Wc", "xUUZcpQlqpM", "NwmR1EDtiFg", "uqG-p4lBxwk"];
 const big = (p: Photo) => staticFile(`photos/${p.id}-2560.webp`);
@@ -157,16 +183,16 @@ const Strip = ({ box, pos, album = ALBUM, peek = 0, gap = 32, clip = 1, fade = 1
 };
 
 /** A drag that lets go: the track follows `px` pixels of drag, then springs on to `to`. */
-const flick = (frame: number, fps: number, from: number, to: number, start: number, dragFor: number, px: number, step: number) => {
+const flick = (frame: number, fps: number, from: number, to: number, start: number, dragFor: number, px: number, step: number, config = { damping: 13, stiffness: 120 }) => {
   const drag = interpolate(frame, [start, start + dragFor], [0, px], { ...clamp, easing: Easing.inOut(Easing.quad) });
-  const letGo = spring({ frame: frame - start - dragFor, fps, config: { damping: 13, stiffness: 120 } });
+  const letGo = spring({ frame: frame - start - dragFor, fps, config });
   const dir = Math.sign(to - from);
   const pos = frame < start + dragFor ? from + (dir * drag) / step : lerp(from + (dir * px) / step, to, letGo);
   return { pos, drag, down: frame >= start && frame < start + dragFor ? 1 : 0 };
 };
 
 // ── The film ─────────────────────────────────────────────────────────────────
-// Story frames, 30 to a second before SLOW (and before the HOLD). Title 0-40, the grid folds
+// Story frames, 30 to a second before SLOW (and before the HOLDS). Title 0-40, the grid folds
 // 40-118, drag 118-210, shapes 210-300, peek 300-362, overflow 362-462, the
 // focus point 462-618, the full-screen lightbox 618-806, the phone 800-1052,
 // the end 1048-1110.
@@ -183,7 +209,7 @@ export const Trailer: React.FC = () => {
 
   // ── Title
   const logo = sp(2, { damping: 14, mass: 0.8 });
-  const titleOut = ease(frame, 32, 8, GLIDE);
+  const titleOut = ease(frame, 31, 8, GLIDE);
 
   // ── The grid folds into one square: the pigeon, cropped on the way the
   // gallery crops it, so the gallery takes over without a cut.
@@ -193,11 +219,11 @@ export const Trailer: React.FC = () => {
 
   // ── Drag and flick
   const f1 = flick(frame, fps, 0, 1, 130, 18, 210, STEP);
-  const f2 = flick(frame, fps, 1, 2, 172, 9, 160, STEP);
+  const f2 = flick(frame, fps, 1, 4, 172, 9, 200, STEP, { damping: 20, stiffness: 70 });
   let pos = frame < 172 ? f1.pos : f2.pos;
   let finger = { x: 0, y: 0, down: 0, o: 0 };
   if (frame >= 122 && frame < 162) finger = { x: 1150 - f1.drag - Math.max(0, frame - 148) * 7, y: 640, down: f1.down, o: shown(122, 150) };
-  if (frame >= 166 && frame < 196) finger = { x: 1130 - f2.drag - Math.max(0, frame - 181) * 10, y: 650, down: f2.down, o: shown(166, 183) };
+  if (frame >= 166 && frame < 196) finger = { x: 1130 - f2.drag - Math.max(0, frame - 181) * 14, y: 650, down: f2.down, o: shown(166, 183) };
 
   // ── Shapes
   const s1 = ease(frame, 220, 14);
@@ -214,22 +240,21 @@ export const Trailer: React.FC = () => {
   const unclip = ease(frame, 394, 10);
   const unfade = ease(frame, 424, 10);
   const reset = ease(frame, 452, 12);
-  if (frame >= 210) pos = 2 + g(318) + g(340) - g(372) - g(402) - g(432);
+  if (frame >= 210) pos = 4 + g(318) + g(340) + g(372) + g(402) + g(432);
   const box: Rect = frame < 210 ? CENTRE : mix({ x: 960 - shapeW / 2, y: 590 - shapeH / 2, w: shapeW, h: shapeH }, CENTRE, reset);
 
   // ── The focus point. The track moves on to the car; the square opens out
   // into the whole photo with the square drawn where it was, the live result
   // slides out beside it, the square zooms in, and then visits the front, a
   // wheel and the rear wing in turn. Then it folds back.
-  const toCliff = ease(frame, 466, 18, GLIDE);
   const expand = ease(frame, 490, 26);
   const liveOut = ease(frame, 504, 18);
   const zoomIn = ease(frame, 528, 22, GLIDE);
   const moveTo = ease(frame, 560, 24, GLIDE);
   const collapse = ease(frame, 596, 22);
   const raw = useRawFrame();
-  const toWheel = ease(raw, HOLD_AT + 4, 18, GLIDE);
-  const toWing = ease(raw, HOLD_AT + 28, 18, GLIDE);
+  const toWheel = ease(holdClock(raw, 1), 4, 18, GLIDE);
+  const toWing = ease(holdClock(raw, 1), 28, 18, GLIDE);
   const SPOTS: [number, number][] = [[0.46, 0.6], [0.6, 0.58], [0.43, 0.67], [0.25, 0.52]];
   const visit = (i: number) => lerp(lerp(lerp(SPOTS[0][i], SPOTS[1][i], moveTo), SPOTS[2][i], toWheel), SPOTS[3][i], toWing);
   const focus: [number, number] = [visit(0), visit(1)];
@@ -270,6 +295,7 @@ export const Trailer: React.FC = () => {
   const p3 = flick(frame, fps, 2, 1, 888, 12, 150, P_STEP);
   const pOpen = ease(frame, 920, 30);
   const pChrome = ease(frame, 942, 12) * (1 - ease(frame, 1002, 6, GLIDE));
+  const pDim = ease(frame, 920, 30) * (1 - ease(frame, 1006, 28));
   const pNext = ease(frame, 966, 22, GLIDE); // deer to red, full screen
   const pClose = ease(frame, 1006, 28);
   // The gallery behind followed the lightbox, so it's on the red one now.
@@ -302,8 +328,8 @@ export const Trailer: React.FC = () => {
         src={staticFile("logo.svg")}
         style={{ position: "absolute", left: 880, top: 270, width: 160, height: 160, opacity: Math.min(1, logo * 1.4) * (1 - titleOut), scale: String(0.4 + logo * 0.6), rotate: `${(1 - logo) * -18}deg`, translate: `0 ${-titleOut * 40}px` }}
       />
-      <Line text="react-motion-lightbox" at={6} until={32} style={{ top: 470, font: `112px/1.1 ${SERIF}`, color: INK }} />
-      <Line text="A lightbox for React that opens out of the photo you click." at={10} until={33} style={{ top: 620, font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="react-motion-lightbox" at={6} until={31} style={{ top: 470, font: `112px/1.1 ${SERIF}`, color: INK }} />
+      <Line text="A lightbox for React that opens out of the photo you click." at={10} until={32} style={{ top: 620, font: `40px ${SANS}`, color: MUTED }} />
 
       {/* The grid, folding into one square */}
       <Caption text="A whole album, in one square." at={44} until={118} />
@@ -331,14 +357,13 @@ export const Trailer: React.FC = () => {
           <Strip
             box={box}
             // On to the cliff photo along the same track, before it opens out.
-            album={frame >= 462 ? [PIGEON, DEER, CAR] : ALBUM}
-            pos={frame >= 462 ? 1 + toCliff : pos}
+            pos={pos}
             peek={110 * peekIn * (1 - reset)}
             clip={1 - unclip * (1 - reset)}
             fade={1 - unfade * (1 - reset)}
           />
           <div style={{ position: "absolute", left: 0, right: 0, top: 590 + 230 + 28, textAlign: "center", font: `28px ${SANS}`, color: MUTED, opacity: frame < 210 ? ease(frame, 120, 8) : 0 }}>
-            {`${Math.round(pos) + 1} / 9`}
+            {`${Math.round(pos) + 1} / ${ALBUM.length}`}
           </div>
         </>
       )}
@@ -366,7 +391,7 @@ export const Trailer: React.FC = () => {
       <Caption text="And back into its square." at={762} until={800} />
       {frame >= 630 && frame < 808 && (
         <>
-          <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.94 * chrome }} />
+          <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.94 * open * (1 - close) }} />
           {LB.map((p, i) => {
             const d = Math.abs(i - lbAt);
             if (d > 1.2) return null;
@@ -416,17 +441,20 @@ export const Trailer: React.FC = () => {
           rotate: `${(1 - phone) * 12}deg`,
         }}
       >
+        {/* The page behind the lightbox: it blurs and fades as the photo opens, and comes back as it closes. */}
+        <div style={{ position: "absolute", inset: 0, filter: `blur(${10 * pDim}px)` }}>
         <div style={{ position: "absolute", left: 32, top: 70, font: `40px ${SERIF}`, color: INK }}>Out and about</div>
         <div style={{ position: "absolute", left: 32, top: 126, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Streets, people, deer, and one very good chair.</div>
         {/* The gallery stays behind the lightbox and follows it. Only the
             open photo is hidden: the lightbox's copy is that one. */}
-        <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} pos={pPos} peek={50} gap={14} radius={20} hide={pInBox ? (pNext > 0.5 ? 2 : 1) : undefined} />
+        <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} album={PHONE_ALBUM} pos={pPos} peek={50} gap={14} radius={20} hide={pInBox ? (pNext > 0.5 ? 2 : 1) : undefined} />
         <div style={{ position: "absolute", left: 32, top: 600, font: `19px ${SANS}`, color: MUTED }}>{`${Math.round(pPos) + 1} / 9`}</div>
         <div style={{ position: "absolute", left: 32, top: 660, font: `40px ${SERIF}`, color: INK }}>Norway</div>
         <div style={{ position: "absolute", left: 32, top: 716, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Fjords, fishing villages and a lot of standing on rocks.</div>
+        </div>
         {pInBox && (
           <>
-            <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.96 * pChrome }} />
+            <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.9 * pDim }} />
             <Shot photo={DEER} rect={deerRect} crop={mixCrop(cropOf(DEER, 330 / 380), WHOLE, pOpen)} radius={18} style={{ opacity: 1 - pNext }} />
             {pOpen > 0.9 && <Shot photo={RED} rect={redRect} crop={mixCrop(WHOLE, cropOf(RED, 330 / 380), pClose)} radius={18} style={{ opacity: pNext }} />}
             <div style={{ opacity: pChrome }}>
@@ -436,7 +464,7 @@ export const Trailer: React.FC = () => {
                 <span style={{ marginLeft: 14 }}>{pNext > 0.5 ? "3 / 9" : "2 / 9"}</span>
               </div>
               <div style={{ position: "absolute", left: 220 - (5 * 52 + 4 * 10) / 2, top: 800, display: "flex", gap: 10 }}>
-                {ALBUM.map((p, i) => {
+                {PHONE_ALBUM.map((p, i) => {
                   const lit = Math.max(0, 1 - Math.abs(i - (1 + pNext)));
                   return <Img key={p.id} src={thumb(p.id)} style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover", opacity: 0.45 + 0.55 * lit }} />;
                 })}
