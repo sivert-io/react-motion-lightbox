@@ -71,9 +71,9 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
   const rebased = useRef(false)
   // Reads the latest render's track, not the one it was created in: a strip
   // run calls it from a listener set up several pictures ago.
-  const latest = useRef({ next, prev, nextOffset, prevOffset })
+  const latest = useRef({ index, next, prev, nextOffset, prevOffset })
   useLayoutEffect(() => {
-    latest.current = { next, prev, nextOffset, prevOffset }
+    latest.current = { index, next, prev, nextOffset, prevOffset }
   })
   const moveOn = (dir: 1 | -1) => {
     const t = latest.current
@@ -91,7 +91,11 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
 
   // Glides the track until the neighbour on `dir`'s side is in the middle,
   // then makes it the current picture and puts the track back at rest.
+  // Reads the latest track too: a slideshow's timer calls this from the render
+  // that set it, which can be from before the pictures were measured. It then
+  // glided one gap instead of one picture, and stopped there.
   const settle = (dir: 1 | -1, velocity?: number) => {
+    const { next, prev, nextOffset, prevOffset } = latest.current
     halt()
     moving.current = true
     heading.current = dir === 1 ? next : prev
@@ -150,6 +154,7 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
   // A move to any picture, the shorter way round. A neighbour is one step;
   // one further away runs through every picture in between.
   const show = (to: number) => {
+    const { index } = latest.current
     if (!many) return
     if (reducedMotion()) return jump(to)
     if (moving.current) {
@@ -164,7 +169,7 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
     if (steps === 1) settle(dir)
     else strip(dir, steps, to)
   }
-  const go = (step: 1 | -1) => show(((queued.current ?? heading.current ?? index) + step + n) % n)
+  const go = (step: 1 | -1) => show(((queued.current ?? heading.current ?? latest.current.index) + step + n) % n)
   // After each landing, a move that was waiting.
   useEffect(() => {
     if (moving.current || queued.current === null) return

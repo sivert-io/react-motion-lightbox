@@ -26,3 +26,19 @@ test('quick swipes land on the photo the counter says', async ({ page }) => {
   // Only the current photo sits in the box; its neighbours are a step away.
   expect(lefts.filter(([, left]) => Math.abs(left - box.x) < 2).map(([i]) => i)).toEqual([current])
 })
+
+// The slideshow's timer was set in the gallery's first render, before the box
+// was measured, and glided one gap instead of one photo.
+test('autoplay moves a whole photo', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  // Away from the gallery, so it isn't held.
+  await page.mouse.move(0, 0)
+  await expect(album.locator('.rml-count')).toHaveText('2 / 9', { timeout: 9000 })
+  await page.waitForTimeout(1200)
+  const box = (await album.locator('.rml-gallery-box').boundingBox())!
+  const left = await album.locator('.rml-gallery-slide[data-index="1"]').evaluate((el) => el.getBoundingClientRect().left)
+  expect(Math.abs(left - box.x)).toBeLessThan(2)
+})
