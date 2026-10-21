@@ -1,4 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { parse, render, type ParseOptions } from 'sugar-high/core'
+import * as css from 'sugar-high/lang/css'
+import * as javascript from 'sugar-high/lang/javascript'
+import * as shell from 'sugar-high/lang/shell'
+
+// Only the three languages on the page, not sugar-high's whole registry. The
+// cast is sugar-high's own documented pattern; its types don't quite line up.
+const highlight = (code: string, name: string) =>
+  render(parse(code, (name.endsWith('.css') ? css : name === 'Terminal' ? shell : javascript) as ParseOptions))
 
 /** One step of the walkthrough: what to do and its code, and beside it, when there is one, a live example. */
 export function Step({ n, title, demo, children }: { n: number; title: string; demo?: ReactNode; children: ReactNode }) {
@@ -16,17 +25,30 @@ export function Step({ n, title, demo, children }: { n: number; title: string; d
   )
 }
 
+/** A file's code with its name and a copy button along the top. Our own code, so the highlighted HTML is safe to set. */
 export function Code({ name, children }: { name: string; children: string }) {
   return (
-    <figure className="m-0 grid min-w-0 gap-2">
-      <figcaption className="flex items-center justify-between gap-4 pl-1 text-sm">
+    <figure className="code">
+      <figcaption>
         <code>{name}</code>
         <CopyButton text={children} />
       </figcaption>
       <pre className="text-ink">
-        <code>{children}</code>
+        <code dangerouslySetInnerHTML={{ __html: highlight(children, name) }} />
       </pre>
     </figure>
+  )
+}
+
+/** An on/off switch with its label. */
+export function Switch({ checked, onChange, children }: { checked: boolean; onChange: (on: boolean) => void; children: ReactNode }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} className="switch" onClick={() => onChange(!checked)}>
+      <span className="switch-track" aria-hidden="true">
+        <span className="switch-knob" />
+      </span>
+      {children}
+    </button>
   )
 }
 

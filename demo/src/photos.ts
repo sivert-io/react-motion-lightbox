@@ -88,11 +88,11 @@ export const ALBUMS: Album[] = [
     photos: [
       photo("dmf546pckjQ", 4000, 6000, "People crossing the street with umbrellas", "Wenhao Ruan", "wenhao_ruan", { focus: [0.55, 0.3], zoom: 1.5 }),
       photo("B4H-44aAzqc", 2081, 3123, "A pigeon on wet pavement", "Bruno da Costa", "ericpetrozza", { focus: [0.37, 0.5], zoom: 2 }),
-      photo("2echtVPwylU", 4000, 6000, "Feeding a spotted deer on the steps", "Wenhao Ruan", "wenhao_ruan", { focus: [0.6, 0.4], zoom: 1.4 }),
+      photo("2echtVPwylU", 4000, 6000, "Feeding a spotted deer on the steps", "Wenhao Ruan", "wenhao_ruan", { focus: [0.62, 0.52], zoom: 1.4 }),
       photo("wIZpOCdTb8I", 3538, 5304, "Baked Club sign", "lf.Franciz !!!", "lffranciz", { focus: [0.4, 0.45], zoom: 1.2 }),
       photo("cA6DjKN2vaw", 3034, 4040, "Someone with red hair eating an apple", "Clara Dickieson", "chaosgingerdesigns", { focus: [0.42, 0.38], zoom: 1.5 }),
       photo("FyVM48yP-S4", 4000, 6000, "Someone in a blazer on their phone", "Mike Cox", "iprefermike", { focus: [0.55, 0.25], zoom: 1.8 }),
-      photo("4sVimJidmpQ", 4671, 7006, "Fallow deer in a forest", "Evgeniy Bezkorovayniy", "korovay", { focus: [0.5, 0.3], zoom: 1.6 }),
+      photo("4sVimJidmpQ", 4671, 7006, "Fallow deer in a forest", "Evgeniy Bezkorovayniy", "korovay", { focus: [0.5, 0.46], zoom: 1.6 }),
       photo("nV1HMjvlOj4", 6862, 4538, "A modern building in the forest", "Caroline Badran", "___atmos", { focus: [0.67, 0.5], zoom: 1.4 }),
       photo("41lvjsoCJKA", 2267, 3400, "A leather lounge chair and side table", "Clay Banks", "claybanks", { focus: [0.35, 0.5], zoom: 1.2 }),
     ],

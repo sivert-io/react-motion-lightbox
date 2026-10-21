@@ -37,15 +37,10 @@ export function App() {
         </div>
       </section>
 
-      <div className="grid gap-20 lg:gap-32">
+      <div className="grid gap-x-12 gap-y-20 md:grid-cols-2">
         {ALBUMS.map((album, i) => (
-          <section
-            key={album.id}
-            id={album.id}
-            aria-labelledby={`${album.id}-title`}
-            className="grid items-center gap-x-16 gap-y-6 lg:grid-cols-2"
-          >
-            <div className={`grid max-w-md gap-3 ${i % 2 ? 'lg:order-2' : ''}`}>
+          <section key={album.id} id={album.id} aria-labelledby={`${album.id}-title`} className="grid content-start gap-5">
+            <div className="grid gap-2">
               <p className="text-sm text-accent">
                 Album {i + 1} · {album.photos.length} photos
               </p>
@@ -54,9 +49,8 @@ export function App() {
               </h2>
               <p className="text-muted">{album.blurb}</p>
             </div>
-            <div className={`w-full max-w-[min(40rem,70svh)] ${i % 2 ? 'lg:justify-self-start' : 'lg:justify-self-end'}`}>
-              <Album title={album.title} photos={album.photos} first={i === 0} />
-            </div>
+            {/* Each on its own beat, so the four don't all turn at once. */}
+            <Album title={album.title} photos={album.photos} first={i === 0} autoplay={6000 + i * 1300} />
           </section>
         ))}
       </div>

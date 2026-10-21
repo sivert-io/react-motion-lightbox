@@ -1,7 +1,7 @@
-import { useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { Gallery, cropOf } from 'react-motion-lightbox'
 import { ALBUMS, type Photo } from './photos'
-import { Code, Step } from './ui'
+import { Code, Step, Switch } from './ui'
 
 const ALL = ALBUMS.flatMap((album) => album.photos)
 const photo = (id: string) => ALL.find((p) => p.src.includes(id))!
@@ -71,12 +71,38 @@ export function Photos() {
 }
 
 export function FocusLesson({ n }: { n: number }) {
-  const start = photo('cKBsq-5U17A')
-  const [focus, setFocus] = useState<[number, number]>(start.focus ?? [0.5, 0.5])
-  const [zoom, setZoom] = useState(start.zoom ?? 1)
-  const item: Photo = { ...start, focus, zoom }
+  const sample = photo('cKBsq-5U17A')
+  // The photo being framed: ours, or one of yours.
+  const [base, setBase] = useState<Photo & { file: string }>({ ...sample, file: 'cliff.jpg' })
+  const [focus, setFocus] = useState<[number, number]>(sample.focus ?? [0.5, 0.5])
+  const [zoom, setZoom] = useState(sample.zoom ?? 1)
+  const item: Photo = { ...base, focus, zoom }
   const [left, top, width, height] = cropOf(item)
   const clamp = (v: number) => round(Math.min(1, Math.max(0, v)))
+
+  // Yours never leaves your device: it's shown from a blob URL, not uploaded.
+  const use = (file?: File) => {
+    if (!file?.type.startsWith('image/')) return
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      setBase({
+        kind: 'image',
+        src: url,
+        thumb: url,
+        alt: 'Your photo',
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        photographer: 'you',
+        profile: '',
+        file: file.name,
+      })
+      setFocus([0.5, 0.5])
+      setZoom(1)
+    }
+    img.src = url
+  }
+  useEffect(() => () => void (base.src.startsWith('blob:') && URL.revokeObjectURL(base.src)), [base.src])
 
   const pick = (event: PointerEvent<HTMLDivElement>) => {
     const box = event.currentTarget.getBoundingClientRect()
@@ -101,42 +127,54 @@ export function FocusLesson({ n }: { n: number }) {
       title="Point it at what matters"
       demo={
         <div className="grid gap-4">
-          <Hint>Click the photo where you want the square, and slide the zoom.</Hint>
-          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start gap-4">
-            <div
-              className="picker"
-              tabIndex={0}
-              role="group"
-              aria-label={`Focus point at ${Math.round(focus[0] * 100)}% across and ${Math.round(focus[1] * 100)}% down. Arrow keys move it.`}
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId)
-                pick(event)
-              }}
-              onPointerMove={(event) => event.buttons && pick(event)}
-              onKeyDown={nudge}
-            >
-              <img src={start.src} alt="" width={start.width} height={start.height} loading="lazy" draggable={false} />
-              <span
-                className="picker-crop"
-                style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${width * 100}%`, height: `${height * 100}%` }}
-              />
-              <span className="picker-dot" style={{ left: `${focus[0] * 100}%`, top: `${focus[1] * 100}%` }} />
-            </div>
-            <Gallery className="demo" items={[item]} radius={10} />
-          </div>
-          <label className="flex items-center gap-3 text-sm">
-            Zoom
-            <input
-              type="range"
-              min={1}
-              max={4}
-              step={0.1}
-              value={zoom}
-              onChange={(event) => setZoom(Number(event.target.value))}
-              className="min-w-0 flex-1 accent-accent"
+          <Hint>Click the photo where you want the square, and slide the zoom. Or try one of your own.</Hint>
+          <div
+            className="picker"
+            tabIndex={0}
+            role="group"
+            aria-label={`Focus point at ${Math.round(focus[0] * 100)}% across and ${Math.round(focus[1] * 100)}% down. Arrow keys move it.`}
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(event.pointerId)
+              pick(event)
+            }}
+            onPointerMove={(event) => event.buttons && pick(event)}
+            onKeyDown={nudge}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault()
+              use(event.dataTransfer.files[0])
+            }}
+          >
+            <img src={base.src} alt="" width={base.width} height={base.height} loading="lazy" draggable={false} />
+            <span
+              className="picker-crop"
+              style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${width * 100}%`, height: `${height * 100}%` }}
             />
-            <span className="w-10 text-right tabular-nums">{zoom.toFixed(1)}×</span>
-          </label>
+            <span className="picker-dot" style={{ left: `${focus[0] * 100}%`, top: `${focus[1] * 100}%` }} />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <label className="flex min-w-48 flex-1 items-center gap-3 text-sm">
+              Zoom
+              <input
+                type="range"
+                min={1}
+                max={4}
+                step={0.1}
+                value={zoom}
+                onChange={(event) => setZoom(Number(event.target.value))}
+                className="min-w-0 flex-1 accent-accent"
+              />
+              <span className="w-10 text-right tabular-nums">{zoom.toFixed(1)}×</span>
+            </label>
+            <label className="chip inline-flex items-center">
+              Use your own photo
+              <input type="file" accept="image/*" className="sr-only" onChange={(event) => use(event.target.files?.[0])} />
+            </label>
+          </div>
+          <div className="grid max-w-sm gap-2">
+            <p className="m-0 text-sm text-muted">How it looks in an album. Click it, or swipe on:</p>
+            <Gallery className="demo" items={[item, ...ALBUMS[0].photos.slice(1, 4)]} radius={14} caption={(p) => p.alt} />
+          </div>
         </div>
       }
     >
@@ -146,15 +184,15 @@ export function FocusLesson({ n }: { n: number }) {
       </p>
       <Code name="One photo">{`{
   kind: 'image',
-  src: '/photos/cliff.jpg',
-  width: ${start.width},
-  height: ${start.height},
+  src: '/photos/${base.file}',
+  width: ${base.width},
+  height: ${base.height},
   focus: [${focus[0]}, ${focus[1]}],
   zoom: ${zoom},
 }`}</Code>
       <p>
-        Click the small square. The lightbox opens out of exactly that part, then shows the whole photo. The crop
-        never runs off the edge: near one, it stops there.
+        Click the photo in the album. The lightbox opens out of exactly the part in the square, then shows the whole
+        photo. The crop never runs off the edge: near one, it stops there.
       </p>
     </Step>
   )
@@ -179,16 +217,22 @@ export function ShapeLesson({ n }: { n: number }) {
       title="Pick a shape"
       demo={
         <div className="grid gap-4">
+          <Hint>
+            {clip
+              ? 'Pick a shape. Then turn overflow hidden off and drag the photo.'
+              : 'Now drag the photo: the next one slides in over the edge, fading as it comes.'}
+          </Hint>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Shape">
             {SHAPES.map((s) => (
               <button key={s.name} type="button" className="chip" aria-pressed={s === shape} onClick={() => setShape(s)}>
                 {s.name}
               </button>
             ))}
-            <label className="ml-auto flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={clip} onChange={(event) => setClip(event.target.checked)} className="accent-accent" />
-              Cut off at the edges
-            </label>
+            <span className="ml-auto">
+              <Switch checked={clip} onChange={setClip}>
+                Overflow hidden
+              </Switch>
+            </span>
           </div>
           <div style={{ maxWidth: `min(100%, 60svh * ${shape.aspect})` }}>
             <Gallery className="demo" items={photos} radius={14} aspect={shape.aspect} clip={clip} />

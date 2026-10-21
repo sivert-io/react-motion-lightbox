@@ -5,7 +5,7 @@ test('clicking the photo moves the focus, in the code and the square', async ({ 
   const picker = page.locator('.picker')
   await picker.scrollIntoViewIfNeeded()
   const box = (await picker.boundingBox())!
-  const square = page.locator('.picker + .rml-gallery img')
+  const square = page.locator('.picker').locator('xpath=ancestor::li').locator('.rml-gallery-slide:not([aria-hidden]) img')
   const before = await square.getAttribute('style')
   await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.5)
   await expect(page.getByText('focus: [0.75, 0.5]')).toBeVisible()

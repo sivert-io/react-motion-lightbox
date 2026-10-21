@@ -11,7 +11,8 @@
   "dependencies": {
     "motion": "^12.43.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sugar-high": "2.5.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
