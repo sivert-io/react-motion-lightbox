@@ -30,7 +30,7 @@ const HOLDS = [
   { at: 30, len: 30 },
   { at: 590, len: 48 },
 ];
-export const STORY_FRAMES = 1110 + HOLDS.reduce((n, h) => n + h.len, 0);
+export const STORY_FRAMES = 1400 + HOLDS.reduce((n, h) => n + h.len, 0);
 const useRawFrame = () => useCurrentFrame() / SLOW;
 const warp = (raw: number) => {
   let t = raw;
@@ -243,12 +243,12 @@ export const Trailer: React.FC = () => {
   if (frame >= 210) pos = 4 + g(318) + g(340) + g(372) + g(402) + g(432);
   const box: Rect = frame < 210 ? CENTRE : mix({ x: 960 - shapeW / 2, y: 590 - shapeH / 2, w: shapeW, h: shapeH }, CENTRE, reset);
 
-  // ── The focus point. The track moves on to the car; the square opens out
-  // into the whole photo with the square drawn where it was, the live result
-  // slides out beside it, the square zooms in, and then visits the front, a
-  // wheel and the rear wing in turn. Then it folds back.
-  const expand = ease(frame, 490, 26);
-  const liveOut = ease(frame, 504, 18);
+  // ── The focus point. The square we've been watching slides left and stays
+  // a square; the whole photo comes in on its right with the square drawn on
+  // it. The square zooms in, then visits the front, a wheel and the rear
+  // wing in turn. Then the photo goes and the square slides back.
+  const aside = ease(frame, 490, 24);
+  const photoIn = ease(frame, 500, 22);
   const zoomIn = ease(frame, 528, 22, GLIDE);
   const moveTo = ease(frame, 560, 24, GLIDE);
   const collapse = ease(frame, 596, 22);
@@ -260,12 +260,10 @@ export const Trailer: React.FC = () => {
   const focus: [number, number] = [visit(0), visit(1)];
   const zoom = lerp(1, 2.6, zoomIn);
   const live = cropOf({ ...CAR, focus, zoom });
-  const start = cropOf(CAR);
-  const WIDE = fit(CAR, 1000, 660, 600, 600);
-  const cliffBox = mix(mix(CENTRE, WIDE, expand), CENTRE, collapse);
-  const cliffCrop = mixCrop(mixCrop(start, WHOLE, expand), live, collapse);
-  const LIVE: Rect = { x: 1250, y: 370, w: 460, h: 460 };
-  const liveRect = mix(mix(CENTRE, LIVE, liveOut), CENTRE, collapse);
+  const WIDE = fit(CAR, 760, 520, 1330, 590);
+  const LEFT: Rect = { x: 330, y: 360, w: 460, h: 460 };
+  const liveRect = mix(mix(CENTRE, LEFT, aside), CENTRE, collapse);
+  const photoOn = photoIn * (1 - collapse);
 
   // ── The full-screen lightbox, out of that square, along two photos and
   // back into the last one's square.
@@ -285,41 +283,57 @@ export const Trailer: React.FC = () => {
   const credit = ["Isak Pettersson", "Sheng L", "Anders Jildén"][at];
   const caption = ["A white sports car in front of a building", "Hallstatt reflected in the lake", "Vernazza, a village on the Italian coast"][at];
 
-  // ── The phone: swipes in small mode, a tap opens the deer full screen, a
-  // swipe there, and the close button puts it back in its square.
+  // ── The phone. Swipes in the small gallery, flicked back two; a tap opens
+  // the deer full screen; a swipe there; taps on two thumbnails jump along;
+  // the close button puts it back. One more swipe, a tap, and a swipe down
+  // closes it the other way.
   const phone = sp(800, { damping: 20 });
-  const phoneOut = ease(frame, 1040, 12, GLIDE);
+  const phoneOut = ease(frame, 1330, 12, GLIDE);
   const P_STEP = 330 + 14;
   const p1 = flick(frame, fps, 0, 1, 836, 12, 150, P_STEP);
   const p2 = flick(frame, fps, 1, 2, 862, 12, 150, P_STEP);
-  const p3 = flick(frame, fps, 2, 1, 888, 12, 150, P_STEP);
-  const pOpen = ease(frame, 920, 30);
-  const pChrome = ease(frame, 942, 12) * (1 - ease(frame, 1002, 6, GLIDE));
-  const pDim = ease(frame, 920, 30) * (1 - ease(frame, 1006, 28));
-  const pNext = ease(frame, 966, 22, GLIDE); // deer to red, full screen
-  const pClose = ease(frame, 1006, 28);
-  // The gallery behind followed the lightbox, so it's on the red one now.
-  const pPos = frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 966 ? p3.pos : 1 + pNext;
-  const pInBox = frame >= 920 && frame < 1034;
+  const p3 = flick(frame, fps, 2, 3, 888, 12, 150, P_STEP);
+  const p4 = flick(frame, fps, 3, 1, 914, 10, 190, P_STEP, { damping: 18, stiffness: 90 });
+  const p5 = flick(frame, fps, 0, 1, 1180, 12, 150, P_STEP);
+  // Two openings. In each: the photo it opened on, how far open it is, how
+  // far closed, and where its track is.
+  const first = frame < 1170;
+  const pOpen = first ? ease(frame, 950, 30) : ease(frame, 1212, 30);
+  const pClose = first ? ease(frame, 1136, 28) : ease(frame, 1278, 28);
+  const lbPos = first ? 1 + ease(frame, 1000, 22, GLIDE) + 2 * ease(frame, 1040, 26, GLIDE) - 4 * ease(frame, 1084, 30, GLIDE) : 1;
+  const inBox = (frame >= 950 && frame < 1164) || (frame >= 1212 && frame < 1306);
+  const pChrome = first ? ease(frame, 972, 12) * (1 - ease(frame, 1132, 6, GLIDE)) : ease(frame, 1234, 12) * (1 - ease(frame, 1252, 6, GLIDE));
+  // The swipe down: the photo follows the finger, and the page shows through.
+  const down = interpolate(frame, [1258, 1276], [0, 220], { ...clamp, easing: Easing.inOut(Easing.quad) }) * (1 - pClose);
+  const pDim = pOpen * (1 - pClose) * (1 - (down / 220) * 0.6);
+  const pPos = frame < 950 ? (frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 914 ? p3.pos : p4.pos) : first ? lbPos : frame < 1212 ? p5.pos : 1;
   const PHONE_STAGE = (p: Photo) => fit(p, 400, 600, 220, 430);
   const slideRect: Rect = { x: 32, y: 200, w: 330, h: 380 };
-  const pGap = PHONE_STAGE(DEER).w / 2 + 24 + PHONE_STAGE(RED).w / 2;
-  const deerRect = shift(mix(slideRect, PHONE_STAGE(DEER), pOpen), -pNext * pGap);
-  const redRect = pClose > 0 ? mix(PHONE_STAGE(RED), slideRect, pClose) : shift(PHONE_STAGE(RED), (1 - pNext) * pGap);
-  let pFinger = { x: 0, y: 0, down: 0, o: 0 };
-  if (frame >= 830 && frame < 856) pFinger = { x: 300 - p1.drag - Math.max(0, frame - 848) * 6, y: 390, down: p1.down, o: shown(830, 850) };
-  if (frame >= 856 && frame < 882) pFinger = { x: 300 - p2.drag - Math.max(0, frame - 874) * 6, y: 390, down: p2.down, o: shown(856, 876) };
-  if (frame >= 882 && frame < 908) pFinger = { x: 120 + p3.drag + Math.max(0, frame - 900) * 6, y: 390, down: p3.down, o: shown(882, 902) };
-  if (frame >= 910 && frame < 930) pFinger = { x: 200, y: 400, down: ease(frame, 916, 3) * (1 - ease(frame, 921, 4)), o: shown(910, 924) };
-  if (frame >= 958 && frame < 992) {
-    const d = interpolate(frame, [966, 980], [0, 160], { ...clamp, easing: Easing.inOut(Easing.quad) });
-    pFinger = { x: 300 - d - Math.max(0, frame - 980) * 6, y: 430, down: frame >= 966 && frame < 980 ? 1 : 0, o: shown(958, 982) };
-  }
-  if (frame >= 994 && frame < 1012) pFinger = { x: 396, y: 62, down: ease(frame, 1000, 3) * (1 - ease(frame, 1005, 4)), o: shown(994, 1008) };
+  const pCaptions = ["A pigeon on wet pavement", "Fallow deer in a forest", "Someone with red hair eating an apple", "A leather lounge chair and side table", "People crossing the street with umbrellas"];
+  const THUMBS_X = 220 - (5 * 52 + 4 * 10) / 2;
+  const thumbX = (i: number) => THUMBS_X + i * 62 + 26;
+  const tapAt = (at: number, x: number, y: number) => (frame >= at - 6 && frame < at + 12 ? { x, y, down: ease(frame, at, 3) * (1 - ease(frame, at + 5, 4)), o: shown(at - 6, at + 8) } : null);
+  const dragAt = (d: { drag: number; down: number }, at: number, x: number, dir: number, y = 390) =>
+    frame >= at - 6 && frame < at + 26 ? { x: x + dir * (d.drag + Math.max(0, frame - at - 12) * 6), y, down: d.down, o: shown(at - 6, at + 16) } : null;
+  const pFinger =
+    dragAt(p1, 836, 300, -1) ??
+    dragAt(p2, 862, 300, -1) ??
+    dragAt(p3, 888, 300, -1) ??
+    dragAt(p4, 914, 120, 1) ??
+    tapAt(944, 200, 400) ??
+    (frame >= 994 && frame < 1030
+      ? { x: 300 - interpolate(frame, [1000, 1016], [0, 160], { ...clamp, easing: Easing.inOut(Easing.quad) }) - Math.max(0, frame - 1016) * 6, y: 430, down: frame >= 1000 && frame < 1016 ? 1 : 0, o: shown(994, 1018) }
+      : null) ??
+    tapAt(1036, thumbX(4), 826) ??
+    tapAt(1080, thumbX(0), 826) ??
+    tapAt(1130, 396, 62) ??
+    dragAt(p5, 1180, 300, -1) ??
+    tapAt(1206, 200, 400) ??
+    (frame >= 1252 && frame < 1284 ? { x: 220, y: 420 + down, down: frame < 1276 ? 1 : 0, o: shown(1252, 1278) } : null) ?? { x: 0, y: 0, down: 0, o: 0 };
 
   // ── End
-  const endLogo = sp(1052, { damping: 14, mass: 0.8 });
-  const pill = sp(1064);
+  const endLogo = sp(1342, { damping: 14, mass: 0.8 });
+  const pill = sp(1354);
 
   return (
     <AbsoluteFill style={{ background: PAPER, fontFamily: SANS }}>
@@ -373,14 +387,17 @@ export const Trailer: React.FC = () => {
       <Caption text="Point it at what matters." at={470} until={612} />
       {frame >= 486 && frame < 632 && (
         <>
-          <Shot photo={CAR} rect={liveRect} crop={live} style={{ opacity: liveOut * (1 - collapse) }} />
-          <Shot photo={CAR} rect={cliffBox} crop={cliffCrop} />
-          {/* Where the square is on the whole photo, the rest dimmed, and the dot. */}
-          <div style={{ position: "absolute", left: cliffBox.x, top: cliffBox.y, width: cliffBox.w, height: cliffBox.h, borderRadius: 24, overflow: "hidden", opacity: ease(frame, 508, 10) * (1 - ease(frame, 594, 6)) }}>
-            <div style={{ position: "absolute", left: live[0] * cliffBox.w, top: live[1] * cliffBox.h, width: live[2] * cliffBox.w, height: live[3] * cliffBox.h, border: "4px solid white", borderRadius: 14, boxShadow: "0 0 0 3000px oklch(15% 0.02 25 / 0.5)" }} />
-            <div style={{ position: "absolute", left: focus[0] * cliffBox.w - 14, top: focus[1] * cliffBox.h - 14, width: 28, height: 28, borderRadius: 99, background: ACCENT, border: "4px solid white" }} />
+          {/* The whole photo, with where the square is drawn on it and the rest dimmed. */}
+          <div style={{ position: "absolute", inset: 0, opacity: photoOn, translate: `${(1 - photoIn) * 80 + collapse * 60}px 0`, scale: String(lerp(0.94, 1, photoIn)) }}>
+            <Shot photo={CAR} rect={WIDE} crop={WHOLE} radius={20} />
+            <div style={{ position: "absolute", left: WIDE.x, top: WIDE.y, width: WIDE.w, height: WIDE.h, borderRadius: 20, overflow: "hidden" }}>
+              <div style={{ position: "absolute", left: live[0] * WIDE.w, top: live[1] * WIDE.h, width: live[2] * WIDE.w, height: live[3] * WIDE.h, border: "4px solid white", borderRadius: 12, boxShadow: "0 0 0 3000px oklch(15% 0.02 25 / 0.5)" }} />
+              <div style={{ position: "absolute", left: focus[0] * WIDE.w - 13, top: focus[1] * WIDE.h - 13, width: 26, height: 26, borderRadius: 99, background: ACCENT, border: "4px solid white" }} />
+            </div>
           </div>
-          <div style={{ position: "absolute", left: LIVE.x, top: LIVE.y + LIVE.h + 30, font: `30px ${MONO}`, color: INK, whiteSpace: "pre", opacity: liveOut * (1 - collapse) }}>
+          {/* The square: the gallery itself, never replaced. */}
+          <Shot photo={CAR} rect={liveRect} crop={live} />
+          <div style={{ position: "absolute", left: WIDE.x, top: WIDE.y + WIDE.h + 30, font: `30px ${MONO}`, color: INK, whiteSpace: "pre", opacity: photoOn }}>
             {`focus: [${focus[0].toFixed(2)}, ${focus[1].toFixed(2)}]\nzoom: ${zoom.toFixed(1)}`}
           </div>
         </>
@@ -447,49 +464,71 @@ export const Trailer: React.FC = () => {
         <div style={{ position: "absolute", left: 32, top: 126, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Streets, people, deer, and one very good chair.</div>
         {/* The gallery stays behind the lightbox and follows it. Only the
             open photo is hidden: the lightbox's copy is that one. */}
-        <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} album={PHONE_ALBUM} pos={pPos} peek={50} gap={14} radius={20} hide={pInBox ? (pNext > 0.5 ? 2 : 1) : undefined} />
+        <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} album={PHONE_ALBUM} pos={pPos} peek={50} gap={14} radius={20} hide={inBox ? Math.round(lbPos) : undefined} />
         <div style={{ position: "absolute", left: 32, top: 600, font: `19px ${SANS}`, color: MUTED }}>{`${Math.round(pPos) + 1} / 9`}</div>
         <div style={{ position: "absolute", left: 32, top: 660, font: `40px ${SERIF}`, color: INK }}>Norway</div>
         <div style={{ position: "absolute", left: 32, top: 716, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Fjords, fishing villages and a lot of standing on rocks.</div>
         </div>
-        {pInBox && (
+        {inBox && (
           <>
             <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.9 * pDim }} />
-            <Shot photo={DEER} rect={deerRect} crop={mixCrop(cropOf(DEER, 330 / 380), WHOLE, pOpen)} radius={18} style={{ opacity: 1 - pNext }} />
-            {pOpen > 0.9 && <Shot photo={RED} rect={redRect} crop={mixCrop(WHOLE, cropOf(RED, 330 / 380), pClose)} radius={18} style={{ opacity: pNext }} />}
+            {PHONE_ALBUM.map((p, i) => {
+              const d = i - lbPos;
+              if (Math.abs(d) > 1.2) return null;
+              const stage = shift(PHONE_STAGE(p), d * 440);
+              const opened = i === 1 && pOpen < 1;
+              const closing = i === Math.round(lbPos) && pClose > 0;
+              const square = cropOf(p, 330 / 380);
+              let rect = stage;
+              let crop = WHOLE;
+              if (opened) {
+                rect = mix(slideRect, stage, pOpen);
+                crop = mixCrop(square, WHOLE, pOpen);
+              }
+              if (closing || (i === Math.round(lbPos) && down > 0)) {
+                const pulled = { ...stage, y: stage.y + down, w: stage.w * (1 - (down / 220) * 0.2), h: stage.h * (1 - (down / 220) * 0.2) };
+                pulled.x = stage.x + (stage.w - pulled.w) / 2;
+                rect = mix(pulled, slideRect, pClose);
+                crop = mixCrop(WHOLE, square, pClose);
+              }
+              const others = i === Math.round(lbPos) ? 1 : pOpen > 0.9 ? 1 - pClose : 0;
+              return <Shot key={p.id} photo={p} rect={rect} crop={crop} radius={18} style={{ opacity: Math.max(0, 1 - Math.abs(d)) * others }} />;
+            })}
             <div style={{ opacity: pChrome }}>
               <div style={{ position: "absolute", right: 22, top: 40, width: 44, height: 44, borderRadius: 99, border: `1.5px solid ${RULE}`, display: "grid", placeItems: "center", font: `20px ${SANS}`, color: MUTED }}>✕</div>
               <div style={{ position: "absolute", left: 0, right: 0, top: 752, textAlign: "center", font: `17px ${SANS}`, color: MUTED }}>
-                {pNext > 0.5 ? "Someone with red hair eating an apple" : "Fallow deer in a forest"}
-                <span style={{ marginLeft: 14 }}>{pNext > 0.5 ? "3 / 9" : "2 / 9"}</span>
+                {pCaptions[Math.round(lbPos)]}
+                <span style={{ marginLeft: 14 }}>{`${Math.round(lbPos) + 1} / 9`}</span>
               </div>
-              <div style={{ position: "absolute", left: 220 - (5 * 52 + 4 * 10) / 2, top: 800, display: "flex", gap: 10 }}>
+              <div style={{ position: "absolute", left: THUMBS_X, top: 800, display: "flex", gap: 10 }}>
                 {PHONE_ALBUM.map((p, i) => {
-                  const lit = Math.max(0, 1 - Math.abs(i - (1 + pNext)));
+                  const lit = Math.max(0, 1 - Math.abs(i - lbPos));
                   return <Img key={p.id} src={thumb(p.id)} style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover", opacity: 0.45 + 0.55 * lit }} />;
                 })}
               </div>
-              <div style={{ position: "absolute", left: 220 - (5 * 52 + 4 * 10) / 2 - 6 + (1 + pNext) * 62, top: 794, width: 64, height: 64, border: `2px solid ${GOLD}`, borderRadius: 12 }} />
+              <div style={{ position: "absolute", left: THUMBS_X - 6 + lbPos * 62, top: 794, width: 64, height: 64, border: `2px solid ${GOLD}`, borderRadius: 12 }} />
             </div>
           </>
         )}
         <Finger {...pFinger} size={48} />
       </div>
-      <Line text="Works on a phone." at={806} until={1040} style={{ top: 330, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
-      <Line text="Swipe it, then tap to open it." at={814} until={1040} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
-      <Line text="And in React Native apps:" at={950} until={1040} style={{ top: 590, left: 200, right: "auto", textAlign: "left", font: `36px ${SANS}`, color: MUTED }} />
-      <Line text="react-native-motion-lightbox" at={956} until={1040} style={{ top: 646, left: 200, right: "auto", textAlign: "left", font: `38px ${MONO}`, color: ACCENT }} />
+      <Line text="Works on a phone." at={806} until={1330} style={{ top: 330, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
+      <Line text="Swipe it, then tap to open it." at={814} until={1026} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="Tap a thumbnail to jump there." at={1032} until={1172} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="Swipe down to close it." at={1178} until={1330} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="And in React Native apps:" at={950} until={1330} style={{ top: 590, left: 200, right: "auto", textAlign: "left", font: `36px ${SANS}`, color: MUTED }} />
+      <Line text="react-native-motion-lightbox" at={956} until={1330} style={{ top: 646, left: 200, right: "auto", textAlign: "left", font: `38px ${MONO}`, color: ACCENT }} />
 
       {/* End */}
       <Img
         src={staticFile("logo.svg")}
         style={{ position: "absolute", left: 900, top: 230, width: 120, height: 120, opacity: Math.min(1, endLogo * 1.4), scale: String(0.4 + endLogo * 0.6), rotate: `${(1 - endLogo) * -18}deg` }}
       />
-      <Line text="react-motion-lightbox" at={1056} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
+      <Line text="react-motion-lightbox" at={1346} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
       <div style={{ position: "absolute", left: "50%", top: 560, translate: `-50% ${(1 - pill) * 30}px`, opacity: pill, padding: "20px 40px", borderRadius: 999, border: `1.5px solid ${RULE}`, background: PAPER_2, font: `34px ${MONO}`, color: INK, whiteSpace: "nowrap" }}>
         npm install react-motion-lightbox
       </div>
-      <Line text="lightbox.gullberg.no" at={1070} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
+      <Line text="lightbox.gullberg.no" at={1360} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
     </AbsoluteFill>
   );
 };
