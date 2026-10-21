@@ -115,7 +115,7 @@ export function FocusLesson({ n }: { n: number }) {
               onPointerMove={(event) => event.buttons && pick(event)}
               onKeyDown={nudge}
             >
-              <img src={start.src} alt="" draggable={false} />
+              <img src={start.src} alt="" width={start.width} height={start.height} loading="lazy" draggable={false} />
               <span
                 className="picker-crop"
                 style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${width * 100}%`, height: `${height * 100}%` }}

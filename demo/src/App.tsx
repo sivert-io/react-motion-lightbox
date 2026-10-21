@@ -55,7 +55,7 @@ export function App() {
               <p className="text-muted">{album.blurb}</p>
             </div>
             <div className={`w-full max-w-[min(40rem,70svh)] ${i % 2 ? 'lg:justify-self-start' : 'lg:justify-self-end'}`}>
-              <Album title={album.title} photos={album.photos} />
+              <Album title={album.title} photos={album.photos} first={i === 0} />
             </div>
           </section>
         ))}
@@ -153,35 +153,42 @@ function Header() {
   )
 }
 
+const NAMES = { system: 'Auto', light: 'Light', dark: 'Dark' }
+
 /** Light, dark, or whatever the system says. Remembered on this device. */
 function ThemeToggle() {
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>(() => {
-    try {
-      return (localStorage.getItem('theme') as 'light' | 'dark' | null) ?? 'system'
-    } catch {
-      return 'system'
-    }
-  })
+  // Starts as Auto, like the HTML rendered at build time, and reads the saved
+  // choice after hydration. The inline script in index.html has applied it already.
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system')
   useEffect(() => {
-    const root = document.documentElement
-    if (theme === 'system') root.removeAttribute('data-theme')
-    else root.dataset.theme = theme
     try {
-      if (theme === 'system') localStorage.removeItem('theme')
-      else localStorage.setItem('theme', theme)
+      const saved = localStorage.getItem('theme')
+      if (saved === 'light' || saved === 'dark') setTheme(saved)
+    } catch {
+      // Private mode: nothing was saved.
+    }
+  }, [])
+  const choose = (choice: typeof theme) => {
+    setTheme(choice)
+    const root = document.documentElement
+    if (choice === 'system') root.removeAttribute('data-theme')
+    else root.dataset.theme = choice
+    try {
+      if (choice === 'system') localStorage.removeItem('theme')
+      else localStorage.setItem('theme', choice)
     } catch {
       // Private mode: the choice just isn't remembered.
     }
-  }, [theme])
+  }
   const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system'
   return (
     <button
       type="button"
       className="min-h-11 min-w-11 cursor-pointer rounded-full border border-rule bg-paper-2 px-4 text-sm whitespace-nowrap text-ink transition-colors hover:bg-paper-3"
-      onClick={() => setTheme(next)}
-      aria-label={`Theme: ${theme}. Switch to ${next}`}
+      onClick={() => choose(next)}
+      aria-label={`${NAMES[theme]} theme. Switch to ${NAMES[next]}`}
     >
-      {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
+      {NAMES[theme]}
     </button>
   )
 }

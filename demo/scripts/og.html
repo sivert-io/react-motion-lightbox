@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- The social card, public/og.png. Rendered at 1200x630 with headless Chrome:
+
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+    --screenshot=public/og.png --window-size=1200,630 --hide-scrollbars \
+    "file://$PWD/scripts/og.html"
+-->
+<html lang="en">
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: 'Young Serif'; src: url('../public/fonts/young-serif.woff2'); }
+  @font-face { font-family: 'Figtree'; src: url('../public/fonts/figtree.woff2'); font-weight: 400 600; }
+  @font-face { font-family: 'JetBrains Mono'; src: url('../public/fonts/jetbrains-mono.woff2'); }
+  :root {
+    --paper: oklch(97.5% 0.012 40);
+    --paper-2: oklch(95% 0.018 38);
+    --ink: oklch(26% 0.04 25);
+    --muted: oklch(45% 0.04 25);
+    --rule: oklch(88% 0.022 32);
+    --accent: oklch(47% 0.12 25);
+    --scrim: oklch(15% 0.02 25 / 0.55);
+    --on-photo: oklch(98% 0.01 40);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 56px;
+    align-items: center;
+    padding: 64px 72px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Figtree', sans-serif;
+  }
+  .name { display: flex; align-items: center; gap: 16px; font: 30px 'Young Serif', serif; }
+  h1 { margin: 40px 0 0; font: 62px/1.08 'Young Serif', serif; letter-spacing: -0.01em; }
+  .install {
+    display: inline-block;
+    margin-top: 40px;
+    padding: 14px 24px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--paper-2);
+    font: 20px 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  /* The whole photo, and the square a gallery would show of it. */
+  .photo { position: relative; border-radius: 22px; overflow: hidden; }
+  .photo img { display: block; width: 100%; }
+  .crop {
+    position: absolute;
+    left: 15%; top: 14%; width: 27%; height: 40%;
+    border: 4px solid var(--on-photo);
+    border-radius: 14px;
+    box-shadow: 0 0 0 999px var(--scrim);
+  }
+  .caption { margin-top: 18px; color: var(--muted); font-size: 22px; }
+</style>
+<body>
+  <div>
+    <div class="name"><img src="../public/logo.svg" width="56" height="56" alt="" />react-motion-lightbox</div>
+    <h1>A lightbox that opens out of the photo you click.</h1>
+    <div class="install">npm install react-motion-lightbox</div>
+  </div>
+  <div>
+    <div class="photo">
+      <img src="../public/photos/cKBsq-5U17A-1280.webp" alt="" />
+      <span class="crop"></span>
+    </div>
+    <p class="caption">Point the square at what matters.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lightbox.gullberg.no/sitemap.xml
