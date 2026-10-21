@@ -192,7 +192,7 @@ export function FocusLesson({ n }: { n: number }) {
 }`}</Code>
       <p>
         Click the photo in the album. The lightbox opens out of exactly the part in the square, then shows the whole
-        photo. The crop never runs off the edge: near one, it stops there.
+        photo. The crop never runs off the photo. Near an edge, it stops at the edge.
       </p>
     </Step>
   )

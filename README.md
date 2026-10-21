@@ -26,7 +26,9 @@ Try it at [lightbox.gullberg.no](https://lightbox.gullberg.no).
 
 You can draw videos with your own player, and put your own buttons and text at the top.
 
-There's also a small one for the page, `Gallery`. It shows one picture at a time in a box, cropped to the part you choose, and opens the lightbox when you click it.
+There's also a small one for the page, `Gallery`. It shows one picture at a time in a box, and opens the lightbox when you click it.
+
+For React Native there's [react-native-motion-lightbox](https://github.com/sivert-io/react-native-motion-lightbox), with the same props wherever they make sense.
 
 ## Install
 
@@ -91,7 +93,9 @@ import { Gallery } from 'react-motion-lightbox'
 />
 ```
 
-Each picture fills the box. `focus` is the point the box centres on, as fractions of the picture, and `zoom` is how far it zooms in on it. Leave them out and you get the middle. Drag it, flick it or use the arrows to move through. Click the picture and the lightbox opens out of exactly what was in the box, and shows the whole picture.
+By default each picture fills the box. `focus` is the point the box centres on, as fractions of the picture. `zoom` is how far it zooms in on that point. Leave them out and you get the middle.
+
+Drag it, flick it, or use the arrows. Click the picture and the lightbox opens out of exactly what was in the box, then shows the whole picture.
 
 It takes the same props as the lightbox and passes them on. On top of those:
 
@@ -103,11 +107,11 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `fit` | `'cover'` (the default) fills the box with the part `focus` and `zoom` pick. `'contain'` shows the whole picture inside the box. |
 | `peek` | How many pixels of the next picture show at the right edge, so it reads as something to swipe. Default `0`. |
 | `gap` | The space between pictures, in pixels. Default `48`. |
-| `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`, for moving things on the page out of the lightbox's way. |
+| `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 
-`className` goes on both the gallery and the lightbox. Videos show their `poster`, or your own player if you pass `renderVideo`, with `active` true for the one on screen. `cropOf(item, aspect)` gives you the same crop, if you build your own.
+`className` goes on both the gallery and the lightbox. A video shows its `poster`, or your own player if you pass `renderVideo`. `active` is true for the one on screen. If you build a gallery of your own, `cropOf(item, aspect)` gives you the same crop.
 
 ## Props
 
@@ -160,7 +164,7 @@ Set these on `.rml`, or on a class you pass in `className`:
 }
 ```
 
-`--rml-blur` blurs the page behind. It rises and settles with the picture as it opens and closes, together with the backdrop. `--rml-frame` is the frame around the current thumbnail.
+`--rml-blur` blurs the page behind. The blur and the backdrop come in and go out with the picture as it opens and closes. `--rml-frame` is the frame around the current thumbnail.
 
 The gallery uses the same variables, set on `.rml-gallery`. Its text and buttons take the page's colour unless you set them.
 
