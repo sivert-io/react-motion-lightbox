@@ -25,11 +25,9 @@ A lightbox for React. It opens out of the thumbnail you clicked and closes back 
 
 I built it for my own site, [gullberg.no](https://gullberg.no), and pulled it out into a package so [Gryt](https://gryt.chat) can use it too.
 
-<p align="center">
-  <img src="docs/trailer.webp" width="100%" alt="A short trailer: an album folds into one square that is dragged and flicked, changes shape, peeks at the next photo, and is shown clipped, fading and fully visible at its edges. The square opens out into a whole cliff photo where a focus point and zoom pick the part it shows, then opens full screen with arrows, caption and a thumbnail row, and closes back into its square. Then a phone: swipes, a tap that opens a photo full screen, a swipe and closing. It ends on the install command.">
-</p>
+https://github.com/user-attachments/assets/6dc8bf07-384d-446f-8ed4-877b0d18ccab
 
-<p align="center"><sub><a href="docs/trailer.mp4">As a video</a> · <a href="https://lightbox.gullberg.no">Try the real thing</a></sub></p>
+<p align="center"><sub><a href="https://lightbox.gullberg.no">Try the real thing</a></sub></p>
 
 ## What it does
 

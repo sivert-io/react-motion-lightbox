@@ -31,7 +31,12 @@ const HOLDS = [
   { at: 590, len: 48 },
 ];
 export const STORY_FRAMES = 1270 + HOLDS.reduce((n, h) => n + h.len, 0);
-const useRawFrame = () => useCurrentFrame() / SLOW;
+/** Story frames are 30 a second whatever the video's frame rate, so it can render at 120 fps. */
+const STORY_FPS = 30;
+const useRawFrame = () => {
+  const { fps } = useVideoConfig();
+  return (useCurrentFrame() * STORY_FPS) / fps / SLOW;
+};
 const warp = (raw: number) => {
   let t = raw;
   for (const h of HOLDS) {
@@ -118,8 +123,7 @@ const Shot = ({ photo, rect, crop, radius = 24, style }: { photo: Photo; rect: R
 /** A line that comes in whole and quickly, and leaves the same way. */
 const Line = ({ text, at, until = Infinity, style }: { text: ReactNode; at: number; until?: number; style?: CSSProperties }) => {
   const frame = useFrame();
-  const { fps } = useVideoConfig();
-  const p = spring({ frame: frame - at, fps, config: { damping: 200 }, durationInFrames: 10 });
+  const p = spring({ frame: frame - at, fps: STORY_FPS, config: { damping: 200 }, durationInFrames: 10 });
   const leave = Number.isFinite(until) ? ease(frame, until, 8, GLIDE) : 0;
   return (
     <div
@@ -202,7 +206,8 @@ const STEP = 460 + 32;
 
 export const Trailer: React.FC = () => {
   const frame = useFrame();
-  const { fps } = useVideoConfig();
+  // Springs count in story frames too.
+  const fps = STORY_FPS;
   const sp = (from: number, config: { damping: number; mass?: number; stiffness?: number } = { damping: 200 }) =>
     spring({ frame: frame - from, fps, config });
   const shown = (from: number, to: number) => ease(frame, from, 5) * (1 - ease(frame, to, 6));

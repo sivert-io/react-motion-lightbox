@@ -43,6 +43,21 @@ export function App() {
         </div>
       </section>
 
+      {/* AV1 first, H.264 where it doesn't play (Safari on older Apple hardware). */}
+      <video
+        className="mb-24 aspect-video w-full rounded-2xl bg-rule"
+        poster="/trailer.webp"
+        aria-label="A short film of the lightbox: an album folds into one square that is dragged, flicked and reshaped, opens out into the whole photo, goes full screen, and then the same on a phone."
+        autoPlay
+        muted
+        loop
+        playsInline
+        controls
+      >
+        <source src="/trailer.av1.mp4" type='video/mp4; codecs="av01.0.13M.08"' />
+        <source src="/trailer.mp4" type="video/mp4" />
+      </video>
+
       <div className="grid gap-x-12 gap-y-20 md:grid-cols-2">
         {ALBUMS.map((album, i) => (
           <section
