@@ -31,8 +31,8 @@ export function App() {
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Copyable text={INSTALL} />
-          <a className="link whitespace-nowrap" href="#learn">
-            Learn it step by step
+          <a className="chip inline-flex items-center no-underline" href="#learn">
+            Learn it step by step ↓
           </a>
         </div>
       </section>
@@ -141,6 +141,9 @@ function Header() {
         react-motion-lightbox
       </a>
       <nav className="flex items-center gap-5 text-sm" aria-label="Links">
+        <a className="link whitespace-nowrap" href="#learn">
+          Learn
+        </a>
         <a className="link whitespace-nowrap" href={GITHUB}>
           GitHub
         </a>
