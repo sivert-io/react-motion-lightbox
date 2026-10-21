@@ -8,7 +8,6 @@ import {
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type WheelEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -462,6 +461,22 @@ function View<T extends LightboxItem>({
     if (s === 1) zoomTo(1, 0, 0, false)
     else zoomAround(s, event.clientX, event.clientY, false)
   }
+  // Not React's onWheel: React listens passively, so it can't stop the page
+  // scrolling under the lightbox, or a trackpad pinch (a wheel with ctrlKey)
+  // zooming the whole page instead of the picture.
+  const wheel = useRef(onWheel)
+  wheel.current = onWheel
+  useEffect(() => {
+    const el = view.current
+    if (!el) return
+    const listener = (event: WheelEvent) => {
+      event.preventDefault()
+      wheel.current(event)
+    }
+    el.addEventListener('wheel', listener, { passive: false })
+    return () => el.removeEventListener('wheel', listener)
+  }, [])
+
 
   // Two fingers: tracked here directly, Motion's pan only follows one.
   const touches = useRef(new Map<number, { x: number; y: number }>())
@@ -673,7 +688,6 @@ function View<T extends LightboxItem>({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onWheel={onWheel}
           onClick={onClick}
         >
           {box.width > 0 && (

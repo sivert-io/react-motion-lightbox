@@ -59,6 +59,12 @@
 .rml::backdrop {
   background: transparent;
 }
+/* The page stays put while a lightbox is open. The scrollbar's space is kept,
+ * so nothing behind it shifts sideways. */
+html:has(.rml[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
 
 /* The chrome fades in with the dialog and out as it closes, so only the
  * picture travels back into the thumbnail. */
