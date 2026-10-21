@@ -70,6 +70,12 @@
   background: var(--rml-backdrop);
   opacity: var(--rml-p, 1);
 }
+/* While the picture moves in or out, nothing takes a pointer: no drag, zoom,
+ * click or button (Lightbox.tsx keeps keys and the wheel out too). */
+.rml[data-moving] > * {
+  pointer-events: none;
+}
+
 .rml::backdrop {
   background: transparent;
 }

@@ -68,3 +68,24 @@ test('pictures cannot be dragged out', async ({ page }) => {
   expect(await blocked('dialog.rml .rml-media')).toBe(true)
   expect(await blocked('dialog.rml .rml-thumb img')).toBe(true)
 })
+
+// Keys, the wheel and clicks while the picture is still on its way in did
+// things to a picture that wasn't there yet.
+test('nothing responds while the picture opens', async ({ page }) => {
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).toHaveAttribute('data-moving')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('+')
+  const box = (await dialog.locator('.rml-view').boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.wheel(0, -400)
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  await page.waitForTimeout(300)
+  await expect(dialog.locator('.rml-count')).toHaveText('1 / 9')
+  const transform = await dialog.locator('.rml-media:not([aria-hidden])').evaluate((el) => getComputedStyle(el).transform)
+  expect(transform === 'none' || transform.startsWith('matrix(1, 0, 0, 1,')).toBe(true)
+})

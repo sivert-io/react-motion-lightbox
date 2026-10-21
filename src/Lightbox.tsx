@@ -399,20 +399,26 @@ function View<T extends LightboxItem>({
   // paint, so it is never seen at rest in the middle before it jumps over the
   // thumbnail to start.
   const opened = useRef(false)
+  // True while the picture is on its way in or out. Every control waits:
+  // a drag, zoom, key or click mid-move fought the move for the picture.
+  const [moving, setMoving] = useState(true)
+  const isMoving = useRef(true)
+  isMoving.current = moving
   useLayoutEffect(() => {
     if (opened.current || !box.width) return
     opened.current = true
     const el = frame.current
-    if (!el || reducedMotion()) return
+    if (!el || reducedMotion()) return setMoving(false)
     const from = rectOf(origin?.(start))
     if (!from) {
-      void fade(el, true)
-      void backdrop(dialog.current, 0, 1, FADE)
+      void Promise.all([fade(el, true), backdrop(dialog.current, 0, 1, FADE)]).then(() => setMoving(false))
       return
     }
     const crop = originCrop?.(start) ?? WHOLE
-    void morph(el, overThumb(el, from, crop), crop, radius, 0, 1, 0.5).then(() => rest(el))
-    void backdrop(dialog.current, 0, 1, 0.5)
+    void Promise.all([morph(el, overThumb(el, from, crop), crop, radius, 0, 1, 0.5), backdrop(dialog.current, 0, 1, 0.5)]).then(() => {
+      rest(el)
+      setMoving(false)
+    })
   }, [box.width, origin, originCrop, start, radius])
 
   // The next and previous items, ready before they are needed.
@@ -495,7 +501,7 @@ function View<T extends LightboxItem>({
     if (!el) return
     const listener = (event: WheelEvent) => {
       event.preventDefault()
-      wheel.current(event)
+      if (!isMoving.current) wheel.current(event)
     }
     el.addEventListener('wheel', listener, { passive: false })
     return () => el.removeEventListener('wheel', listener)
@@ -621,6 +627,7 @@ function View<T extends LightboxItem>({
       zx.jump(0)
       zy.jump(0)
       setLeaving(true)
+      setMoving(true)
       // Two frames: one for the owner to render the thumbnail, one to lay it out.
       await nextFrame()
       await nextFrame()
@@ -660,19 +667,25 @@ function View<T extends LightboxItem>({
       aria-label={labels.dialog}
       aria-modal="true"
       data-leaving={leaving || undefined}
+      data-moving={moving || undefined}
       // Nothing in here drags out: not to another tab, not to the desktop.
       onDragStart={(event) => event.preventDefault()}
       // The empty space around the stage and the bars closes it too. Not at the
       // end of a drag, whose click lands on whatever it was let go over.
       onPointerDown={() => (panned.current = false)}
       onClick={(event) => {
-        if (!panned.current && (event.target as Element).matches('.rml, .rml-stage, .rml-chrome, .rml-title, .rml-toolbar')) onClose()
+        if (!moving && !panned.current && (event.target as Element).matches('.rml, .rml-stage, .rml-chrome, .rml-title, .rml-toolbar')) onClose()
       }}
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (!moving) onClose()
       }}
       onKeyDown={(event) => {
+        if (moving) {
+          // Tab still moves focus; nothing else does anything yet.
+          if (event.key !== 'Tab') event.preventDefault()
+          return
+        }
         if (event.key === '+' || event.key === '=') {
           if (!zoomed()) toggleZoom(centre().x, centre().y)
         } else if (event.key === '-') {
