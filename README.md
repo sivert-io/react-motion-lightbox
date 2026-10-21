@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/react-motion-lightbox"><img src="https://img.shields.io/npm/v/react-motion-lightbox?style=flat-square&color=9d4642" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/react-motion-lightbox"><img src="https://img.shields.io/npm/dm/react-motion-lightbox?style=flat-square&color=9d4642" alt="Downloads a month"></a>
-  <a href="https://bundlephobia.com/package/react-motion-lightbox"><img src="https://img.shields.io/bundlephobia/minzip/react-motion-lightbox?style=flat-square&color=9d4642&label=minzipped" alt="Size, minified and gzipped"></a>
+  <a href="src/index.ts"><img src="https://img.shields.io/badge/types-included-9d4642?style=flat-square" alt="TypeScript types included"></a>
   <a href="https://github.com/sivert-io/react-motion-lightbox/stargazers"><img src="https://img.shields.io/github/stars/sivert-io/react-motion-lightbox?style=flat-square&color=9d4642" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/react-motion-lightbox?style=flat-square&color=9d4642" alt="MIT licence"></a>
 </p>
