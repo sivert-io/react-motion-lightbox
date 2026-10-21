@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Gallery } from './Gallery'
+import { Album } from './Album'
 import { ALBUMS } from './photos'
-import gallerySource from './Gallery.tsx?raw'
+import albumSource from './Album.tsx?raw'
 import stylesSource from './styles.css?raw'
 
 const INSTALL = 'npm install react-motion-lightbox motion'
@@ -28,8 +28,8 @@ export function App() {
       <section className="max-w-2xl pt-12 pb-16 sm:pt-20">
         <h1 className="text-4xl sm:text-5xl">A lightbox that opens out of the photo you click.</h1>
         <p className="mt-5 text-lg text-muted">
-          Click any photo below. Drag or swipe to move between them, double-click or scroll to zoom, and press Esc to
-          close. It goes back into the square it came from.
+          Each album below is a small version of it. Swipe through one, then click the photo to open it full size.
+          Zoom with a double-click or the scroll wheel, and press Esc to go back into the square.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Copyable text={INSTALL} />
@@ -39,18 +39,26 @@ export function App() {
         </div>
       </section>
 
-      <div className="grid gap-16">
-        {ALBUMS.map((album) => (
-          <section key={album.id} id={album.id} aria-labelledby={`${album.id}-title`}>
-            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-              <h2 id={`${album.id}-title`} className="text-2xl sm:text-3xl">
+      <div className="grid gap-20 lg:gap-32">
+        {ALBUMS.map((album, i) => (
+          <section
+            key={album.id}
+            id={album.id}
+            aria-labelledby={`${album.id}-title`}
+            className="grid items-center gap-x-16 gap-y-6 lg:grid-cols-2"
+          >
+            <div className={`grid max-w-md gap-3 ${i % 2 ? 'lg:order-2' : ''}`}>
+              <p className="text-sm text-accent">
+                Album {i + 1} · {album.photos.length} photos
+              </p>
+              <h2 id={`${album.id}-title`} className="text-3xl sm:text-4xl">
                 {album.title}
               </h2>
-              <p className="text-sm text-muted">
-                {album.blurb} <span className="whitespace-nowrap">{album.photos.length} photos</span>
-              </p>
+              <p className="text-muted">{album.blurb}</p>
             </div>
-            <Gallery photos={album.photos} />
+            <div className={`w-full max-w-[min(40rem,70svh)] ${i % 2 ? 'lg:justify-self-start' : 'lg:justify-self-end'}`}>
+              <Album title={album.title} photos={album.photos} />
+            </div>
           </section>
         ))}
       </div>
@@ -73,12 +81,13 @@ export function App() {
             </p>
             <Code name="One photo">{itemSource}</Code>
           </Step>
-          <Step n={3} title="Put it next to your thumbnails">
+          <Step n={3} title="Open it from your own photos">
             <p>
-              This is the whole <code>Gallery</code> component on this page. <code>origin</code> tells it which thumbnail
-              to grow out of, and <code>originCrop</code> which part of the photo that thumbnail shows.
+              This is the whole <code>Album</code> component on this page. The small album runs on{' '}
+              <code>useTrack</code>, the same track the lightbox moves on. <code>origin</code> tells the lightbox which
+              photo to grow out of, and <code>originCrop</code> which part of it the square shows.
             </p>
-            <Code name="Gallery.tsx">{gallerySource.trim()}</Code>
+            <Code name="Album.tsx">{albumSource.trim()}</Code>
           </Step>
           <Step n={4} title="Make it look like your site">
             <p>Everything it draws takes its colours from a few CSS variables. These are this page's.</p>
