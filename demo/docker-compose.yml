@@ -6,6 +6,9 @@
 # Set up like gullberg.no's: a read-only nginx on one port, used for the host
 # binding, nginx's `listen` and the healthcheck alike.
 
+# Named, or compose calls the project after its folder: just "demo".
+name: react-motion-lightbox-demo
+
 services:
   web:
     build:
