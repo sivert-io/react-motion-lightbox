@@ -1,16 +1,40 @@
-<img src="docs/logo.svg" width="72" height="72" alt="">
+<p align="center">
+  <a href="https://lightbox.gullberg.no">
+    <img src="docs/banner.webp" width="100%" alt="react-motion-lightbox: a lightbox that opens out of the photo you click. A photo of a cliff with a square drawn around the person standing on it.">
+  </a>
+</p>
 
-# react-motion-lightbox
+<p align="center">
+  <a href="https://www.npmjs.com/package/react-motion-lightbox"><img src="https://img.shields.io/npm/v/react-motion-lightbox?style=flat-square&color=9d4642" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/react-motion-lightbox"><img src="https://img.shields.io/npm/dm/react-motion-lightbox?style=flat-square&color=9d4642" alt="Downloads a month"></a>
+  <a href="https://bundlephobia.com/package/react-motion-lightbox"><img src="https://img.shields.io/bundlephobia/minzip/react-motion-lightbox?style=flat-square&color=9d4642&label=minzipped" alt="Size, minified and gzipped"></a>
+  <a href="https://github.com/sivert-io/react-motion-lightbox/stargazers"><img src="https://img.shields.io/github/stars/sivert-io/react-motion-lightbox?style=flat-square&color=9d4642" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/react-motion-lightbox?style=flat-square&color=9d4642" alt="MIT licence"></a>
+</p>
+
+<p align="center">
+  <a href="https://lightbox.gullberg.no"><b>Try it</b></a> ·
+  <a href="#install">Install</a> ·
+  <a href="#gallery">Gallery</a> ·
+  <a href="#props">Props</a> ·
+  <a href="#theming">Theming</a> ·
+  <a href="https://github.com/sivert-io/react-native-motion-lightbox">React Native version</a>
+</p>
 
 A lightbox for React. It opens out of the thumbnail you clicked and closes back into it.
 
 I built it for my own site, [gullberg.no](https://gullberg.no), and pulled it out into a package so [Gryt](https://gryt.chat) can use it too.
 
-Try it at [lightbox.gullberg.no](https://lightbox.gullberg.no).
-
-![The lightbox open on a gallery of eight screenshots, with the thumbnail row underneath](docs/open.webp)
-
-![Halfway through a move to the next picture: the current one slides out to the left while the next comes in from the right](docs/slide.webp)
+<table>
+  <tr>
+    <td width="50%"><img src="docs/open.webp" alt="The lightbox open on a gallery of eight screenshots, with the thumbnail row underneath"></td>
+    <td width="50%"><img src="docs/slide.webp" alt="Halfway through a move to the next picture: the current one slides out to the left while the next comes in from the right"></td>
+  </tr>
+  <tr>
+    <td align="center">Open, with the thumbnail row</td>
+    <td align="center">Halfway to the next picture</td>
+  </tr>
+</table>
 
 ## What it does
 
