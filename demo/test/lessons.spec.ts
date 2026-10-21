@@ -23,3 +23,14 @@ test('peek shows the next photo at the right edge', async ({ page }) => {
   // One photo (the box less 56) and a 12px gap along, so 56 - 12 = 44 of it shows.
   expect(Math.round(box.x + box.width - next.x)).toBe(44)
 })
+
+test('with peek, the one after next is there while the next slides in', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  const step = page.locator('#learn ol > li').nth(3)
+  await step.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }))
+  await step.getByRole('switch', { name: 'Peek at the next' }).click()
+  await step.getByRole('button', { name: 'Next' }).click()
+  await page.waitForTimeout(250)
+  await expect(step.locator('.rml-gallery-slide[data-index="2"]')).toHaveCount(1)
+})

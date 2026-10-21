@@ -51,3 +51,20 @@ test('only the current thumbnail is framed', async ({ page }) => {
   })
   expect(shown).toBe(1)
 })
+
+test('pictures cannot be dragged out', async ({ page }) => {
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  const blocked = (selector: string) =>
+    page.locator(selector).first().evaluate((el) => {
+      const event = new DragEvent('dragstart', { bubbles: true, cancelable: true })
+      el.dispatchEvent(event)
+      return event.defaultPrevented
+    })
+  expect(await blocked('#norway .rml-gallery-slide img')).toBe(true)
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  await page.waitForTimeout(900)
+  expect(await blocked('dialog.rml .rml-media')).toBe(true)
+  expect(await blocked('dialog.rml .rml-thumb img')).toBe(true)
+})

@@ -26,6 +26,20 @@
   --rml-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Pictures can't be selected or dragged out, in either. Safari reads the
+ * -webkit- property; the others need the dragstart handlers in the components. */
+.rml img,
+.rml video,
+.rml-gallery img,
+.rml-gallery video {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.rml-gallery-box,
+.rml-thumbs {
+  user-select: none;
+}
+
 .rml[open] {
   /* `clip`, not `hidden`: a hidden box can still be scrolled by script, and a
    * picture parked off screen mid-slide gives it somewhere to scroll to. */
