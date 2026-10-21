@@ -16,6 +16,13 @@ const GOLD = "#e0b04a";
 const OUT = Easing.bezier(0.16, 1, 0.3, 1);
 const GLIDE = Easing.bezier(0.65, 0, 0.35, 1);
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+/**
+ * The film is timed in story frames. Each real frame is 1/SLOW of one, so
+ * raising SLOW slows everything evenly, springs included.
+ */
+export const SLOW = 1.2;
+export const STORY_FRAMES = 820;
+const useFrame = () => useCurrentFrame() / SLOW;
 /** 0 before `from`, 1 after `from + dur` frames, eased in between. */
 const ease = (frame: number, from: number, dur: number, easing = OUT) =>
   interpolate(frame, [from, from + dur], [0, 1], { ...clamp, easing });
@@ -30,6 +37,10 @@ const DEER: Photo = { id: "4sVimJidmpQ", w: 4671, h: 7006, focus: [0.5, 0.46], z
 const RED: Photo = { id: "cA6DjKN2vaw", w: 3034, h: 4040, focus: [0.42, 0.38], zoom: 1.5 };
 const CHAIR: Photo = { id: "41lvjsoCJKA", w: 2267, h: 3400, focus: [0.35, 0.5], zoom: 1.2 };
 const STREET: Photo = { id: "dmf546pckjQ", w: 4000, h: 6000, focus: [0.55, 0.3], zoom: 1.5 };
+const AURORA: Photo = { id: "DmA484UHAzw", w: 4748, h: 2635 };
+const CAR: Photo = { id: "r42PtGYCF7U", w: 6000, h: 4000, focus: [0.5, 0.83], zoom: 2.2 };
+/** The Lights album, for the full-screen lightbox's thumbnail row. */
+const LIGHTS = ["DmA484UHAzw", "r42PtGYCF7U", "6BRuv2Wqwhc", "ZWwoQRR-zWQ", "AaceTp_LRAM", "E06AY-OUD7g"];
 /** The album on the gallery's track, in order. */
 const ALBUM = [PIGEON, DEER, RED, CHAIR, STREET];
 /** The whole album, for the grid it folds out of: thumbnails are enough there. */
@@ -70,7 +81,7 @@ const Shot = ({ photo, rect, crop, radius = 24, style }: { photo: Photo; rect: R
 
 /** A line that comes in whole and quickly, and leaves the same way. */
 const Line = ({ text, at, until = Infinity, style }: { text: string; at: number; until?: number; style?: CSSProperties }) => {
-  const frame = useCurrentFrame();
+  const frame = useFrame();
   const { fps } = useVideoConfig();
   const p = spring({ frame: frame - at, fps, config: { damping: 200 }, durationInFrames: 10 });
   const leave = Number.isFinite(until) ? ease(frame, until, 8, GLIDE) : 0;
@@ -135,15 +146,14 @@ const Strip = ({ box, pos, peek = 0, gap = 32, clip = 1, radius = 24 }: { box: R
 };
 
 // ── The film ─────────────────────────────────────────────────────────────────
-// Frames at 30 fps. Title 0-40, grid 40-120, drag 120-210, shapes 210-300,
-// peek and overflow 300-390, focus 390-490, open and close 490-590,
-// phone 590-660, end 660-720.
+// Story frames (30 a second before SLOW). Title 0-40, grid 40-120, drag
+// 120-210, shapes 210-300, peek and overflow 300-390, focus 390-490, the
+// full-screen lightbox 490-690, phone 690-756, end 756-820.
 
 const CENTRE: Rect = { x: 960 - 230, y: 590 - 230, w: 460, h: 460 };
-const BIG = (p: Photo) => fit(p, 1300, 740, 960, 580);
 
 export const Trailer: React.FC = () => {
-  const frame = useCurrentFrame();
+  const frame = useFrame();
   const { fps } = useVideoConfig();
   const sp = (from: number, config: { damping: number; mass?: number; stiffness?: number } = { damping: 200 }) =>
     spring({ frame: frame - from, fps, config });
@@ -202,32 +212,36 @@ export const Trailer: React.FC = () => {
   const whole = fit(PIGEON, 560, 760, 640, 590);
   const liveRect = mix({ x: 1130, y: 360, w: 460, h: 460 }, CENTRE, focusOut);
 
-  // ── Open out of that square, on to the next, and close into it.
-  const tap = { x: 1010, y: 640, down: ease(frame, 494, 3) * (1 - ease(frame, 499, 4)), o: ease(frame, 488, 5) * (1 - ease(frame, 502, 6)) };
-  const open = ease(frame, 498, 30);
-  const next = ease(frame, 536, 20, GLIDE);
-  const close = ease(frame, 562, 26);
-  const GAPLB = 140;
-  const along = next * -(BIG(PIGEON).w / 2 + GAPLB + BIG(DEER).w / 2);
-  const lbAt = next; // 0 on the pigeon, 1 on the deer
-  const row = ease(frame, 512, 14) * (1 - ease(frame, 558, 8, GLIDE));
-  const rowW = 5 * 84 + 4 * 16;
-  const pigeonRect = mix(CENTRE, BIG(PIGEON), open);
-  const deerHome = { ...BIG(DEER), x: BIG(DEER).x + BIG(PIGEON).w / 2 + GAPLB + BIG(DEER).w / 2 };
-  const deerRect = mix(deerHome, CENTRE, close);
-  const deerOpen = { ...deerRect, x: deerRect.x + along * (1 - close) };
+  // ── The full-screen lightbox. The track moves on from the pigeon to a
+  // wide photo; a tap opens it full screen with the whole picture, the
+  // arrows, the caption and the thumbnail row; it moves to the next and
+  // closes back into the square.
+  const swap = ease(frame, 486, 18, GLIDE);
+  const tap = { x: 1010, y: 640, down: ease(frame, 516, 3) * (1 - ease(frame, 521, 4)), o: ease(frame, 510, 5) * (1 - ease(frame, 524, 6)) };
+  const open = ease(frame, 520, 34);
+  const chrome = ease(frame, 544, 14) * (1 - ease(frame, 648, 8, GLIDE));
+  const next = ease(frame, 600, 24, GLIDE);
+  const close = ease(frame, 654, 30);
+  const squareOut = ease(frame, 684, 8, GLIDE);
+  const STAGE = (p: Photo) => fit(p, 1600, 700, 960, 505);
+  const lbGap = 48;
+  const distance = STAGE(AURORA).w / 2 + lbGap + STAGE(CAR).w / 2;
+  const along = -next * distance;
+  const auroraRect = mix(CENTRE, STAGE(AURORA), open);
+  const carRect = mix({ ...STAGE(CAR), x: STAGE(CAR).x + distance }, CENTRE, close);
+  const rowW = 6 * 84 + 5 * 16;
 
   // ── Phone, then the end.
-  const phone = sp(596, { damping: 20 });
-  const phoneOut = ease(frame, 652, 10, GLIDE);
-  const swipe = ease(frame, 624, 18, GLIDE);
-  const endLogo = sp(664, { damping: 14, mass: 0.8 });
-  const pill = sp(676);
+  const phone = sp(690, { damping: 20 });
+  const phoneOut = ease(frame, 746, 10, GLIDE);
+  const swipe = ease(frame, 718, 18, GLIDE);
+  const endLogo = sp(758, { damping: 14, mass: 0.8 });
+  const pill = sp(770);
 
   const inGrid = frame >= 40 && frame < 108;
   const inStrip = frame >= 104 && frame < 392;
-  const inFocus = frame >= 390 && frame < 498;
-  const inLightbox = frame >= 498 && frame < 600;
+  const inFocus = frame >= 390 && frame < 506;
+  const inLightbox = frame >= 486 && frame < 694;
 
   return (
     <AbsoluteFill style={{ background: PAPER, fontFamily: SANS }}>
@@ -315,25 +329,48 @@ export const Trailer: React.FC = () => {
               {`focus: [${focus[0].toFixed(2)}, ${focus[1].toFixed(2)}]\nzoom: ${zoom.toFixed(1)}`}
             </div>
           </div>
-          <Shot photo={PIGEON} rect={liveRect} crop={live} style={{ opacity: focusIn }} />
+          <Shot photo={PIGEON} rect={{ ...liveRect, x: liveRect.x - swap * STEP }} crop={live} style={{ opacity: focusIn * (1 - swap) }} />
         </>
       )}
 
-      {/* Open, next, close */}
-      <Caption text="Opens out of the photo." at={492} until={560} />
-      <Caption text="And closes back into its square." at={562} until={596} />
+      {/* The full-screen lightbox */}
+      <Caption text="Opens out of the photo." at={498} until={538} />
+      <Caption text="And back into its square." at={650} until={688} />
       {inLightbox && (
         <>
-          {/* Each fades by its distance from the middle, as on the track. */}
-          <Shot photo={PIGEON} rect={{ ...pigeonRect, x: pigeonRect.x + along }} crop={mixCrop(cropOf(PIGEON), WHOLE, open)} style={{ opacity: 1 - next }} />
-          {open > 0.6 && <Shot photo={DEER} rect={deerOpen} crop={mixCrop(WHOLE, cropOf(DEER), close)} style={{ opacity: next * (1 - ease(frame, 590, 8, GLIDE)) }} />}
-          <div style={{ position: "absolute", left: 960 - rowW / 2, top: 975, display: "flex", gap: 16, opacity: row, translate: `0 ${(1 - row) * 24}px` }}>
-            {ALBUM.map((p, i) => {
-              const lit = Math.max(0, 1 - Math.abs(i - lbAt));
-              return <Img key={p.id} src={thumb(p.id)} style={{ width: 84, height: 84, borderRadius: 12, objectFit: "cover", opacity: 0.45 + 0.55 * lit, scale: String(1 + 0.1 * lit) }} />;
-            })}
+          <div style={{ position: "absolute", inset: 0, background: PAPER, opacity: 0.94 * chrome }} />
+          {/* The wide photo: a square on the track until the tap, then the whole of it. */}
+          <Shot
+            photo={AURORA}
+            rect={{ ...auroraRect, x: auroraRect.x + (1 - swap) * STEP + along }}
+            crop={mixCrop(cropOf(AURORA), WHOLE, open)}
+            style={{ opacity: swap * (1 - next) }}
+          />
+          {open > 0.9 && <Shot photo={CAR} rect={{ ...carRect, x: carRect.x + along * (1 - close) }} crop={mixCrop(WHOLE, cropOf(CAR), close)} style={{ opacity: next * (1 - squareOut) }} />}
+
+          {/* The lightbox's own furniture, as on the page. */}
+          <div style={{ opacity: chrome }}>
+            <div style={{ position: "absolute", left: 72, top: 52, font: `30px ${SANS}`, color: ACCENT, textDecoration: "underline", textUnderlineOffset: 6 }}>
+              {next > 0.5 ? "Photo by Jonatan Pie" : "Photo by Jon Anders Dalan"}
+            </div>
+            <div style={{ position: "absolute", right: 72, top: 40, width: 64, height: 64, borderRadius: 99, border: `1.5px solid ${RULE}`, display: "grid", placeItems: "center", font: `30px ${SANS}`, color: MUTED }}>✕</div>
+            {[72, 1920 - 72 - 64].map((x, i) => (
+              <div key={x} style={{ position: "absolute", left: x, top: 505 - 32, width: 64, height: 64, borderRadius: 99, border: `1.5px solid ${RULE}`, display: "grid", placeItems: "center", font: `34px ${SANS}`, color: MUTED }}>
+                {i ? "›" : "‹"}
+              </div>
+            ))}
+            <div style={{ position: "absolute", left: 0, right: 0, top: 878, textAlign: "center", font: `28px ${SANS}`, color: MUTED }}>
+              {next > 0.5 ? "A car in the snow under the northern lights" : "Green northern lights over a lake"}
+              <span style={{ marginLeft: 28 }}>{next > 0.5 ? "2 / 6" : "1 / 6"}</span>
+            </div>
+            <div style={{ position: "absolute", left: 960 - rowW / 2, top: 950, display: "flex", gap: 16 }}>
+              {LIGHTS.map((id, i) => {
+                const lit = Math.max(0, 1 - Math.abs(i - next));
+                return <Img key={id} src={thumb(id)} style={{ width: 84, height: 84, borderRadius: 12, objectFit: "cover", opacity: 0.45 + 0.55 * lit, scale: String(1 + 0.1 * lit) }} />;
+              })}
+            </div>
+            <div style={{ position: "absolute", left: 960 - rowW / 2 - 12 + next * 100, top: 938, width: 108, height: 108, border: `3px solid ${GOLD}`, borderRadius: 20 }} />
           </div>
-          <div style={{ position: "absolute", left: 960 - rowW / 2 - 12 + lbAt * 100, top: 963, width: 108, height: 108, border: `3px solid ${GOLD}`, borderRadius: 20, opacity: row }} />
         </>
       )}
       <Finger {...tap} />
@@ -362,20 +399,20 @@ export const Trailer: React.FC = () => {
         <div style={{ position: "absolute", left: 32, top: 660, font: `40px ${SERIF}`, color: INK }}>Norway</div>
         <div style={{ position: "absolute", left: 32, top: 716, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Fjords, fishing villages and a lot of standing on rocks.</div>
       </div>
-      <Line text="Works on a phone." at={600} until={652} style={{ top: 360, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
-      <Line text="And in React Native apps:" at={606} until={652} style={{ top: 520, left: 200, right: "auto", textAlign: "left", font: `38px ${SANS}`, color: MUTED }} />
-      <Line text="react-native-motion-lightbox" at={610} until={652} style={{ top: 580, left: 200, right: "auto", textAlign: "left", font: `40px ${MONO}`, color: ACCENT }} />
+      <Line text="Works on a phone." at={694} until={746} style={{ top: 360, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
+      <Line text="And in React Native apps:" at={700} until={746} style={{ top: 520, left: 200, right: "auto", textAlign: "left", font: `38px ${SANS}`, color: MUTED }} />
+      <Line text="react-native-motion-lightbox" at={704} until={746} style={{ top: 580, left: 200, right: "auto", textAlign: "left", font: `40px ${MONO}`, color: ACCENT }} />
 
       {/* End */}
       <Img
         src={staticFile("logo.svg")}
         style={{ position: "absolute", left: 900, top: 230, width: 120, height: 120, opacity: Math.min(1, endLogo * 1.4), scale: String(0.4 + endLogo * 0.6), rotate: `${(1 - endLogo) * -18}deg` }}
       />
-      <Line text="react-motion-lightbox" at={668} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
+      <Line text="react-motion-lightbox" at={762} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
       <div style={{ position: "absolute", left: "50%", top: 560, translate: `-50% ${(1 - pill) * 30}px`, opacity: pill, padding: "20px 40px", borderRadius: 999, border: `1.5px solid ${RULE}`, background: PAPER_2, font: `34px ${MONO}`, color: INK, whiteSpace: "nowrap" }}>
         npm install react-motion-lightbox
       </div>
-      <Line text="lightbox.gullberg.no" at={682} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
+      <Line text="lightbox.gullberg.no" at={776} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
     </AbsoluteFill>
   );
 };
