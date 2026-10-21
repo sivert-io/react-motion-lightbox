@@ -25,6 +25,9 @@ jobs:
       - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run typecheck
+      # Opens the lightbox in Chrome and checks it shows its picture.
+      - run: npm ci && npm test
+        working-directory: demo
       - name: Check the tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
       - run: npm publish --provenance --access public

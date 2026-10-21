@@ -621,7 +621,7 @@ function View<T extends LightboxItem>({
         <div className="rml-title">{title?.(item, index)}</div>
         <div className="rml-toolbar">
           {toolbar?.(item, index)}
-          <button className="rml-button rml-close" type="button" aria-label={labels.close} onClick={onClose}>
+          <button className="rml-button rml-close" type="button" aria-label={labels.close} title={labels.close} onClick={onClose}>
             {icons.close}
           </button>
         </div>
@@ -629,7 +629,7 @@ function View<T extends LightboxItem>({
 
       <div className="rml-stage">
         {many && (
-          <button className="rml-button rml-nav" type="button" aria-label={labels.previous} onClick={() => go(-1)}>
+          <button className="rml-button rml-nav" type="button" aria-label={labels.previous} title={labels.previous} onClick={() => go(-1)}>
             {icons.previous}
           </button>
         )}
@@ -673,7 +673,7 @@ function View<T extends LightboxItem>({
         </m.div>
 
         {many && (
-          <button className="rml-button rml-nav" type="button" aria-label={labels.next} onClick={() => go(1)}>
+          <button className="rml-button rml-nav" type="button" aria-label={labels.next} title={labels.next} onClick={() => go(1)}>
             {icons.next}
           </button>
         )}

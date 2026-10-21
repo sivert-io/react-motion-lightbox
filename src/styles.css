@@ -140,6 +140,9 @@
   touch-action: none;
   user-select: none;
   overflow: visible clip;
+  /* Pinned to the middle column. With one item there are no arrows to fill
+   * the side columns, and auto-placed it landed in the first one, 0px wide. */
+  grid-column: 2;
 }
 .rml-view[data-many] {
   cursor: pointer;
@@ -278,6 +281,9 @@
 @media (hover: none) {
   .rml-stage {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .rml-view {
+    grid-column: 1;
   }
   .rml-nav {
     display: none;
