@@ -364,6 +364,12 @@ pre code {
   --rml-blur: 10px;
 }
 
+/* A ground behind each photo, so a fitted one has a frame and the next one's
+ * edge shows when it peeks. */
+.rml-gallery.demo .rml-gallery-slide {
+  background: var(--paper-3);
+}
+
 /* The albums on the page take the page's colours. */
 .rml-gallery.demo {
   --rml-muted: var(--muted);

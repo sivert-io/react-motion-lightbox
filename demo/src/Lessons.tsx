@@ -209,7 +209,16 @@ export function ShapeLesson({ n }: { n: number }) {
   const photos = ALBUMS[1].photos
   const [shape, setShape] = useState(SHAPES[1])
   const [clip, setClip] = useState(true)
-  const props = [shape.aspect !== 1 && `aspect={${shape.code}}`, !clip && 'clip={false}'].filter(Boolean).join(' ')
+  const [whole, setWhole] = useState(false)
+  const [peek, setPeek] = useState(false)
+  const props = [
+    shape.aspect !== 1 && `aspect={${shape.code}}`,
+    whole && `fit="contain"`,
+    peek && 'peek={56} gap={12}',
+    !clip && 'clip={false}',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <Step
@@ -228,20 +237,39 @@ export function ShapeLesson({ n }: { n: number }) {
                 {s.name}
               </button>
             ))}
-            <span className="ml-auto">
-              <Switch checked={clip} onChange={setClip}>
-                Overflow hidden
-              </Switch>
-            </span>
+          </div>
+          <div className="flex flex-wrap gap-x-6">
+            <Switch checked={whole} onChange={setWhole}>
+              Whole photo
+            </Switch>
+            <Switch checked={peek} onChange={setPeek}>
+              Peek at the next
+            </Switch>
+            <Switch checked={clip} onChange={setClip}>
+              Overflow hidden
+            </Switch>
           </div>
           <div style={{ maxWidth: `min(100%, 60svh * ${shape.aspect})` }}>
-            <Gallery className="demo" items={photos} radius={14} aspect={shape.aspect} clip={clip} />
+            <Gallery
+              className="demo"
+              items={photos}
+              radius={14}
+              aspect={shape.aspect}
+              clip={clip}
+              fit={whole ? 'contain' : 'cover'}
+              peek={peek ? 56 : 0}
+              gap={peek ? 12 : undefined}
+            />
           </div>
         </div>
       }
     >
       <p>
         <code>aspect</code> is the box's width over its height. The focus and zoom still work, for whatever shape it is.
+      </p>
+      <p>
+        <code>fit="contain"</code> shows the whole photo instead of a crop. <code>peek</code> lets the next one show at
+        the right edge, so it reads as something to swipe.
       </p>
       <p>
         By default the box cuts photos off at its edges as they slide. Turn <code>clip</code> off and they slide out past
