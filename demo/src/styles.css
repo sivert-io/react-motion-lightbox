@@ -200,6 +200,19 @@ a {
   background: var(--logo-tile);
 }
 
+/* Sections fade and rise in as they come into view (useReveal in App.tsx).
+ * Only once the script has run and marked what was already on screen, so the
+ * page as first painted never blinks out. */
+.reveal-on .reveal:not(.in) {
+  opacity: 0;
+  translate: 0 1.5rem;
+}
+.reveal-on .reveal {
+  transition:
+    opacity 700ms var(--ease-out),
+    translate 900ms var(--ease-out);
+}
+
 /* What to try next, in the walkthrough. */
 .hint {
   margin: 0;

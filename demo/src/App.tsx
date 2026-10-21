@@ -19,6 +19,7 @@ const themeSource = stylesSource.slice(
 const PHOTOGRAPHERS = [...new Map(ALBUMS.flatMap((a) => a.photos).map((p) => [p.profile, p.photographer]))]
 
 export function App() {
+  useReveal()
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">
       <Header />
@@ -39,7 +40,14 @@ export function App() {
 
       <div className="grid gap-x-12 gap-y-20 md:grid-cols-2">
         {ALBUMS.map((album, i) => (
-          <section key={album.id} id={album.id} aria-labelledby={`${album.id}-title`} className="grid content-start gap-5">
+          <section
+            key={album.id}
+            id={album.id}
+            aria-labelledby={`${album.id}-title`}
+            className="reveal grid content-start gap-5"
+            // The second column a beat behind the first.
+            style={{ transitionDelay: `${(i % 2) * 120}ms` }}
+          >
             <div className="grid gap-2">
               <p className="text-sm text-accent">
                 Album {i + 1} · {album.photos.length} photos
@@ -72,7 +80,7 @@ export function App() {
           <Step n={5} title="Make it look like your site">
             <p>
               Everything it draws takes its colours from a few CSS variables. <code>--rml-blur</code> blurs the page
-              behind the open lightbox, and the blur rises and settles as it opens and closes. These are this page's.
+              behind the open lightbox. The blur comes in and goes out with the picture. Here are this page's.
             </p>
             <Code name="styles.css">{themeSource}</Code>
           </Step>
@@ -94,7 +102,7 @@ export function App() {
         </p>
       </section>
 
-      <footer className="mt-24 grid gap-6 border-t border-rule pt-8 text-sm text-muted">
+      <footer className="reveal mt-24 grid gap-6 border-t border-rule pt-8 text-sm text-muted">
         <p>
           Photos from Unsplash, by{' '}
           {PHOTOGRAPHERS.map(([profile, name], i) => (
@@ -123,6 +131,33 @@ export function App() {
       </footer>
     </div>
   )
+}
+
+/**
+ * Sections fade and rise into place as they scroll into view, once each. What
+ * is already on screen when the page loads is left alone, so nothing that has
+ * painted disappears, and with reduced motion nothing moves at all.
+ */
+function useReveal() {
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          entry.target.classList.add('in')
+          observer.unobserve(entry.target)
+        }
+      },
+      { rootMargin: '0px 0px -10% 0px' },
+    )
+    for (const el of document.querySelectorAll('.reveal')) {
+      if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('in')
+      else observer.observe(el)
+    }
+    document.documentElement.classList.add('reveal-on')
+    return () => observer.disconnect()
+  }, [])
 }
 
 function Header() {

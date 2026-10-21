@@ -12,7 +12,7 @@ const highlight = (code: string, name: string) =>
 /** One step of the walkthrough: what to do and its code, and beside it, when there is one, a live example. */
 export function Step({ n, title, demo, children }: { n: number; title: string; demo?: ReactNode; children: ReactNode }) {
   return (
-    <li className={`grid items-start gap-x-12 gap-y-6 ${demo ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
+    <li className={`reveal grid items-start gap-x-12 gap-y-6 ${demo ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
       <div className="grid min-w-0 gap-4">
         <h3 className="flex items-baseline gap-3 text-xl sm:text-2xl">
           <span className="font-body text-base text-accent tabular-nums">{n}</span>
