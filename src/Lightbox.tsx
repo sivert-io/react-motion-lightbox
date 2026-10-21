@@ -74,6 +74,12 @@ export interface LightboxProps<T extends LightboxItem = LightboxItem> {
   onClose: () => void
   /** The item on screen changed (swipe, arrows, keys, thumbnails). */
   onIndexChange?: (index: number) => void
+  /**
+   * Where the track is, every frame it moves: the item's index, fractional
+   * in between items, from 0 up to (not including) the number of items. For
+   * something behind the lightbox that should move with it.
+   */
+  onPosition?: (position: number) => void
   /** The closing animation has finished and the dialog is gone. */
   onExited?: (index: number) => void
   /**
@@ -316,6 +322,7 @@ function View<T extends LightboxItem>({
   onDone,
   onClose,
   onIndexChange,
+  onPosition,
   origin,
   originCrop,
   renderVideo,
@@ -356,6 +363,9 @@ function View<T extends LightboxItem>({
   const item = items[index]
   const here = sizeOf(item)
   const stripAt = useStripPosition(x, index, n, [nextOffset, prevOffset])
+  const reportPosition = useRef(onPosition)
+  reportPosition.current = onPosition
+  useEffect(() => stripAt.on('change', (p) => reportPosition.current?.(p)), [stripAt])
 
   // Tell the owner where we are, and follow it when it moves us.
   const reported = useRef(start)
@@ -650,6 +660,8 @@ function View<T extends LightboxItem>({
       aria-label={labels.dialog}
       aria-modal="true"
       data-leaving={leaving || undefined}
+      // Nothing in here drags out: not to another tab, not to the desktop.
+      onDragStart={(event) => event.preventDefault()}
       // The empty space around the stage and the bars closes it too. Not at the
       // end of a drag, whose click lands on whatever it was let go over.
       onPointerDown={() => (panned.current = false)}

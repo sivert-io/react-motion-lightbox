@@ -42,3 +42,26 @@ test('autoplay moves a whole photo', async ({ page }) => {
   const left = await album.locator('.rml-gallery-slide[data-index="1"]').evaluate((el) => el.getBoundingClientRect().left)
   expect(Math.abs(left - box.x)).toBeLessThan(2)
 })
+
+// The gallery behind the lightbox moves with it, so it doesn't jump to the
+// next picture once the lightbox has landed.
+test('the gallery follows the lightbox as it moves', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  await page.waitForTimeout(900)
+  const box = (await album.locator('.rml-gallery-box').boundingBox())!
+  const at = () => album.locator('.rml-gallery-slide[data-index="1"]').evaluate((el) => el.getBoundingClientRect().left)
+  const before = await at()
+  await page.locator('dialog.rml').getByRole('button', { name: 'Next' }).click()
+  await page.waitForTimeout(250)
+  const mid = await at()
+  // Partway: it has started moving, and not yet arrived.
+  expect(mid).toBeLessThan(before - 20)
+  expect(mid).toBeGreaterThan(box.x + 20)
+  await page.waitForTimeout(800)
+  expect(Math.abs((await at()) - box.x)).toBeLessThan(2)
+  await expect(album.locator('.rml-count')).toHaveText('2 / 9')
+})

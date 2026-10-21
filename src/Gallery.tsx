@@ -48,6 +48,11 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
   gap?: number
   /** Called with the picture's index on a click, instead of opening the lightbox: for an app with a viewer of its own. */
   onPress?: (index: number) => void
+  /**
+   * The lightbox opened, started closing, or finished closing and is gone:
+   * for moving things on the page out of its way.
+   */
+  onLightboxChange?: (state: 'open' | 'closing' | 'closed') => void
 }
 
 /**
@@ -66,6 +71,7 @@ export function Gallery<T extends LightboxItem>({
   peek = 0,
   gap = GAP,
   onPress,
+  onLightboxChange,
   ...props
 }: GalleryProps<T>) {
   const { items, caption, className, onIndexChange, renderVideo, radius = 12 } = props
@@ -112,7 +118,30 @@ export function Gallery<T extends LightboxItem>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index])
 
-  const [open, setOpen] = useState(false)
+  // While the lightbox is open the gallery behind it moves with it, step for
+  // step, the way a drag moves it: `follow` is how far along the lightbox's
+  // track is, counted from where it opened, without wrapping. When the
+  // lightbox lands, the gallery is put on its picture anyway, in case a jump
+  // (a thumbnail far away, or reduced motion) went faster than it followed.
+  const follow = useRef<{ from: number; at: number } | null>(null)
+  const onPosition = (p: number) => {
+    const f = follow.current
+    if (!f) return
+    let step = p - f.at
+    if (step > n / 2) step -= n
+    else if (step < -n / 2) step += n
+    f.at = p
+    f.from += step
+    track.pan(-f.from * (width - peek + gap))
+  }
+
+  // Closing counts as open for the slideshow, which waits until the picture is back.
+  const [lightbox, setLightbox] = useState<'open' | 'closing' | 'closed'>('closed')
+  const open = lightbox !== 'closed'
+  useEffect(() => {
+    onLightboxChange?.(lightbox)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox])
   // A drag ends in a click. That one shouldn't open the lightbox.
   const dragged = useRef(false)
 
@@ -132,6 +161,9 @@ export function Gallery<T extends LightboxItem>({
   return (
     <div
       className={['rml-gallery', className].filter(Boolean).join(' ')}
+      data-lightbox={open ? lightbox : undefined}
+      // Nothing in here drags out: not to another tab, not to the desktop.
+      onDragStart={(event) => event.preventDefault()}
       onPointerEnter={() => setHeld(true)}
       onPointerLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}
@@ -163,6 +195,9 @@ export function Gallery<T extends LightboxItem>({
               ...(many && prev !== next ? [{ i: prev, at: -step }] : []),
               { i: index, at: 0 },
               ...(many ? [{ i: next, at: step }] : []),
+              // With a peek, the one after next shows at the edge as the next
+              // one slides in, so it has to be there before the move ends.
+              ...(peek > 0 && n > 3 ? [{ i: (next + 1) % n, at: 2 * step }] : []),
             ].map(({ i, at }) => (
               <Slide
                 key={i}
@@ -181,8 +216,10 @@ export function Gallery<T extends LightboxItem>({
                 onOpen={() => {
                   if (dragged.current) return
                   track.jump(i)
-                  if (onPress) onPress(i)
-                  else setOpen(true)
+                  if (onPress) return onPress(i)
+                  track.panStart()
+                  follow.current = { from: 0, at: i }
+                  setLightbox('open')
                 }}
               />
             ))}
@@ -215,11 +252,23 @@ export function Gallery<T extends LightboxItem>({
       <Lightbox
         {...props}
         index={index}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={lightbox === 'open'}
+        onClose={() => setLightbox('closing')}
+        onExited={() => {
+          follow.current = null
+          setLightbox('closed')
+        }}
         // The gallery follows along underneath, so the lightbox closes back
         // into whichever picture it ended on.
-        onIndexChange={track.jump}
+        onPosition={onPosition}
+        onIndexChange={(i) => {
+          if (i === track.index) return
+          track.jump(i)
+          if (follow.current) {
+            track.panStart()
+            follow.current = { from: 0, at: i }
+          }
+        }}
         origin={(i) => {
           const slide = box.current?.querySelector(`[data-index="${i}"]`)
           return slide && fit === 'contain' ? contained(i, slide.getBoundingClientRect()) : slide

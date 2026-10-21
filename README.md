@@ -103,6 +103,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `fit` | `'cover'` (the default) fills the box with the part `focus` and `zoom` pick. `'contain'` shows the whole picture inside the box. |
 | `peek` | How many pixels of the next picture show at the right edge, so it reads as something to swipe. Default `0`. |
 | `gap` | The space between pictures, in pixels. Default `48`. |
+| `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`, for moving things on the page out of the lightbox's way. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 
