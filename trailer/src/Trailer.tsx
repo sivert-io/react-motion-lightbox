@@ -30,7 +30,7 @@ const HOLDS = [
   { at: 30, len: 30 },
   { at: 590, len: 48 },
 ];
-export const STORY_FRAMES = 1400 + HOLDS.reduce((n, h) => n + h.len, 0);
+export const STORY_FRAMES = 1270 + HOLDS.reduce((n, h) => n + h.len, 0);
 const useRawFrame = () => useCurrentFrame() / SLOW;
 const warp = (raw: number) => {
   let t = raw;
@@ -285,28 +285,24 @@ export const Trailer: React.FC = () => {
 
   // ── The phone. Swipes in the small gallery, flicked back two; a tap opens
   // the deer full screen; a swipe there; taps on two thumbnails jump along;
-  // the close button puts it back. One more swipe, a tap, and a swipe down
-  // closes it the other way.
+  // a swipe down closes it back into its square.
   const phone = sp(800, { damping: 20 });
-  const phoneOut = ease(frame, 1330, 12, GLIDE);
+  const phoneOut = ease(frame, 1200, 12, GLIDE);
   const P_STEP = 330 + 14;
   const p1 = flick(frame, fps, 0, 1, 836, 12, 150, P_STEP);
   const p2 = flick(frame, fps, 1, 2, 862, 12, 150, P_STEP);
   const p3 = flick(frame, fps, 2, 3, 888, 12, 150, P_STEP);
   const p4 = flick(frame, fps, 3, 1, 914, 10, 190, P_STEP, { damping: 18, stiffness: 90 });
-  const p5 = flick(frame, fps, 0, 1, 1180, 12, 150, P_STEP);
-  // Two openings. In each: the photo it opened on, how far open it is, how
-  // far closed, and where its track is.
-  const first = frame < 1170;
-  const pOpen = first ? ease(frame, 950, 30) : ease(frame, 1212, 30);
-  const pClose = first ? ease(frame, 1136, 28) : ease(frame, 1278, 28);
-  const lbPos = first ? 1 + ease(frame, 1000, 22, GLIDE) + 2 * ease(frame, 1040, 26, GLIDE) - 4 * ease(frame, 1084, 30, GLIDE) : 1;
-  const inBox = (frame >= 950 && frame < 1164) || (frame >= 1212 && frame < 1306);
-  const pChrome = first ? ease(frame, 972, 12) * (1 - ease(frame, 1132, 6, GLIDE)) : ease(frame, 1234, 12) * (1 - ease(frame, 1252, 6, GLIDE));
+  // How far open, how far closed, and where its track is.
+  const pOpen = ease(frame, 950, 30);
+  const pClose = ease(frame, 1144, 28);
+  const lbPos = 1 + ease(frame, 1000, 22, GLIDE) + 2 * ease(frame, 1040, 26, GLIDE) - 4 * ease(frame, 1084, 30, GLIDE);
+  const inBox = frame >= 950 && frame < 1172;
+  const pChrome = ease(frame, 972, 12) * (1 - ease(frame, 1122, 6, GLIDE));
   // The swipe down: the photo follows the finger, and the page shows through.
-  const down = interpolate(frame, [1258, 1276], [0, 220], { ...clamp, easing: Easing.inOut(Easing.quad) }) * (1 - pClose);
+  const down = interpolate(frame, [1124, 1142], [0, 220], { ...clamp, easing: Easing.inOut(Easing.quad) }) * (1 - pClose);
   const pDim = pOpen * (1 - pClose) * (1 - (down / 220) * 0.6);
-  const pPos = frame < 950 ? (frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 914 ? p3.pos : p4.pos) : first ? lbPos : frame < 1212 ? p5.pos : 1;
+  const pPos = frame < 950 ? (frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 914 ? p3.pos : p4.pos) : lbPos;
   const PHONE_STAGE = (p: Photo) => fit(p, 400, 600, 220, 430);
   const slideRect: Rect = { x: 32, y: 200, w: 330, h: 380 };
   const pCaptions = ["A pigeon on wet pavement", "Fallow deer in a forest", "Someone with red hair eating an apple", "A leather lounge chair and side table", "People crossing the street with umbrellas"];
@@ -326,14 +322,11 @@ export const Trailer: React.FC = () => {
       : null) ??
     tapAt(1036, thumbX(4), 826) ??
     tapAt(1080, thumbX(0), 826) ??
-    tapAt(1130, 396, 62) ??
-    dragAt(p5, 1180, 300, -1) ??
-    tapAt(1206, 200, 400) ??
-    (frame >= 1252 && frame < 1284 ? { x: 220, y: 420 + down, down: frame < 1276 ? 1 : 0, o: shown(1252, 1278) } : null) ?? { x: 0, y: 0, down: 0, o: 0 };
+    (frame >= 1118 && frame < 1150 ? { x: 220, y: 420 + down, down: frame >= 1124 && frame < 1142 ? 1 : 0, o: shown(1118, 1144) } : null) ?? { x: 0, y: 0, down: 0, o: 0 };
 
   // ── End
-  const endLogo = sp(1342, { damping: 14, mass: 0.8 });
-  const pill = sp(1354);
+  const endLogo = sp(1212, { damping: 14, mass: 0.8 });
+  const pill = sp(1224);
 
   return (
     <AbsoluteFill style={{ background: PAPER, fontFamily: SANS }}>
@@ -512,23 +505,23 @@ export const Trailer: React.FC = () => {
         )}
         <Finger {...pFinger} size={48} />
       </div>
-      <Line text="Works on a phone." at={806} until={1330} style={{ top: 330, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
+      <Line text="Works on a phone." at={806} until={1200} style={{ top: 330, left: 200, right: "auto", textAlign: "left", font: `92px ${SERIF}`, color: INK }} />
       <Line text="Swipe it, then tap to open it." at={814} until={1026} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
-      <Line text="Tap a thumbnail to jump there." at={1032} until={1172} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
-      <Line text="Swipe down to close it." at={1178} until={1330} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
-      <Line text="And in React Native apps:" at={950} until={1330} style={{ top: 590, left: 200, right: "auto", textAlign: "left", font: `36px ${SANS}`, color: MUTED }} />
-      <Line text="react-native-motion-lightbox" at={956} until={1330} style={{ top: 646, left: 200, right: "auto", textAlign: "left", font: `38px ${MONO}`, color: ACCENT }} />
+      <Line text="Tap a thumbnail to jump there." at={1032} until={1112} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="Swipe down to close it." at={1116} until={1200} style={{ top: 460, left: 200, right: "auto", textAlign: "left", font: `40px ${SANS}`, color: MUTED }} />
+      <Line text="And in React Native apps:" at={950} until={1200} style={{ top: 590, left: 200, right: "auto", textAlign: "left", font: `36px ${SANS}`, color: MUTED }} />
+      <Line text="react-native-motion-lightbox" at={956} until={1200} style={{ top: 646, left: 200, right: "auto", textAlign: "left", font: `38px ${MONO}`, color: ACCENT }} />
 
       {/* End */}
       <Img
         src={staticFile("logo.svg")}
         style={{ position: "absolute", left: 900, top: 230, width: 120, height: 120, opacity: Math.min(1, endLogo * 1.4), scale: String(0.4 + endLogo * 0.6), rotate: `${(1 - endLogo) * -18}deg` }}
       />
-      <Line text="react-motion-lightbox" at={1346} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
+      <Line text="react-motion-lightbox" at={1216} style={{ top: 400, font: `92px ${SERIF}`, color: INK }} />
       <div style={{ position: "absolute", left: "50%", top: 560, translate: `-50% ${(1 - pill) * 30}px`, opacity: pill, padding: "20px 40px", borderRadius: 999, border: `1.5px solid ${RULE}`, background: PAPER_2, font: `34px ${MONO}`, color: INK, whiteSpace: "nowrap" }}>
         npm install react-motion-lightbox
       </div>
-      <Line text="lightbox.gullberg.no" at={1360} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
+      <Line text="lightbox.gullberg.no" at={1230} style={{ top: 690, font: `34px ${SANS}`, color: ACCENT }} />
     </AbsoluteFill>
   );
 };
