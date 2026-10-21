@@ -334,10 +334,13 @@ html:has(.rml[open]) {
 .rml-gallery-box[data-clip] {
   clip-path: inset(-6px);
 }
+/* Its width is set inline: the box's, less any peek at the next picture. */
 .rml-gallery-slide {
   will-change: transform, opacity;
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
   padding: 0;
   border: 0;
   overflow: hidden;
@@ -354,6 +357,13 @@ html:has(.rml[open]) {
   max-width: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+.rml-gallery-video,
+.rml-gallery-video > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .rml-gallery-foot {
   display: flex;

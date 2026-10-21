@@ -100,9 +100,13 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `aspect` | The box's width over its height. Default `1`, a square. |
 | `loading` | `'lazy'` (the default) loads the pictures once the gallery is within half a screen of being seen. `'eager'` loads them straight away: use it for a gallery at the top of the page. |
 | `autoplay` | Move on by itself every this many milliseconds, like `6000`. It holds while the pointer or focus is on the gallery or the lightbox is open, adds a pause button, and stays still with reduced motion. |
+| `fit` | `'cover'` (the default) fills the box with the part `focus` and `zoom` pick. `'contain'` shows the whole picture inside the box. |
+| `peek` | How many pixels of the next picture show at the right edge, so it reads as something to swipe. Default `0`. |
+| `gap` | The space between pictures, in pixels. Default `48`. |
+| `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 
-`className` goes on both the gallery and the lightbox. `cropOf(item, aspect)` gives you the same crop, if you build your own.
+`className` goes on both the gallery and the lightbox. Videos show their `poster`, or your own player if you pass `renderVideo`, with `active` true for the one on screen. `cropOf(item, aspect)` gives you the same crop, if you build your own.
 
 ## Props
 

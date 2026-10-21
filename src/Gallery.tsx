@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { LazyMotion, domMax, type MotionValue } from 'motion/react'
 import * as m from 'motion/react-m'
 import { cropOf } from './crop.js'
@@ -37,6 +37,17 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
    * there's a button to pause it, and it stays still with reduced motion.
    */
   autoplay?: number
+  /**
+   * `'cover'`, the default, fills the box with the part of each picture its
+   * `focus` and `zoom` pick. `'contain'` shows the whole picture inside the box.
+   */
+  fit?: 'cover' | 'contain'
+  /** How many pixels of the next picture show at the right edge, so it reads as something to swipe. Default 0. */
+  peek?: number
+  /** The space between pictures on the track, in pixels. Default 48. */
+  gap?: number
+  /** Called with the picture's index on a click, instead of opening the lightbox: for an app with a viewer of its own. */
+  onPress?: (index: number) => void
 }
 
 /**
@@ -46,13 +57,30 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
  * with the whole picture. Takes the lightbox's props and passes them on.
  * `className` goes on both.
  */
-export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loading = 'lazy', autoplay, ...props }: GalleryProps<T>) {
-  const { items, caption, className, onIndexChange, radius = 12 } = props
+export function Gallery<T extends LightboxItem>({
+  aspect = 1,
+  clip = true,
+  loading = 'lazy',
+  autoplay,
+  fit = 'cover',
+  peek = 0,
+  gap = GAP,
+  onPress,
+  ...props
+}: GalleryProps<T>) {
+  const { items, caption, className, onIndexChange, renderVideo, radius = 12 } = props
   const labels = { ...DEFAULT_LABELS, ...props.labels }
   const icons = { ...DEFAULT_ICONS, ...props.icons }
   const n = items.length
   const natural = useNaturalSizes(items)
   const crop = (i: number) => cropOf({ ...items[i], ...natural(items[i]) }, aspect)
+  // Where the picture sits in its slide: a crop that fills it, or all of it, fitted.
+  const contained = (i: number, slide: DOMRect) => {
+    const { width: w, height: h } = natural(items[i])
+    const scale = Math.min(slide.width / w, slide.height / h)
+    const [cw, ch] = [w * scale, h * scale]
+    return new DOMRect(slide.left + (slide.width - cw) / 2, slide.top + (slide.height - ch) / 2, cw, ch)
+  }
 
   const box = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
@@ -70,8 +98,10 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
     return () => observer.disconnect()
   }, [near])
 
-  // Every picture is the box's size, so a neighbour is one box and a gap away.
-  const step = width + GAP
+  // Every picture is the same size, the box less the peek, so a neighbour is
+  // one picture and a gap away.
+  const slideWidth = width - peek
+  const step = slideWidth + gap
   const track = useTrack(n, 0, () => [step, step])
   const { index, prev, next, many, x, go } = track
   const shown = useRef(index)
@@ -118,7 +148,7 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
           ref={box}
           className="rml-gallery-box"
           data-clip={clip || undefined}
-          style={{ aspectRatio: aspect }}
+          style={width ? { height: slideWidth / aspect } : { aspectRatio: aspect }}
           onPointerDown={() => (dragged.current = false)}
           onPanStart={track.panStart}
           onPan={(_, info) => {
@@ -139,18 +169,20 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
                 item={items[i]}
                 index={i}
                 label={items[i].alt || `${i + 1} / ${n}`}
-                crop={crop(i)}
-                width={width}
+                crop={fit === 'cover' ? crop(i) : undefined}
+                width={slideWidth}
                 x={x}
                 at={at}
                 step={step}
                 radius={radius}
                 fade={!clip}
                 show={near}
+                video={renderVideo && items[i].kind === 'video' ? renderVideo(items[i], { active: at === 0 }) : undefined}
                 onOpen={() => {
                   if (dragged.current) return
                   track.jump(i)
-                  setOpen(true)
+                  if (onPress) onPress(i)
+                  else setOpen(true)
                 }}
               />
             ))}
@@ -188,19 +220,22 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
         // The gallery follows along underneath, so the lightbox closes back
         // into whichever picture it ended on.
         onIndexChange={track.jump}
-        origin={(i) => box.current?.querySelector(`[data-index="${i}"]`)}
-        originCrop={crop}
+        origin={(i) => {
+          const slide = box.current?.querySelector(`[data-index="${i}"]`)
+          return slide && fit === 'contain' ? contained(i, slide.getBoundingClientRect()) : slide
+        }}
+        originCrop={fit === 'cover' ? crop : undefined}
       />
     </div>
   )
 }
 
-/** One picture in the box: the whole of it, moved and scaled so the box shows just its crop. */
+/** One picture in the box: the whole of it, moved and scaled so the box shows just its crop, or fitted inside. */
 function Slide({
   item,
   index,
   label,
-  crop: [left, top, w, h],
+  crop,
   width,
   x,
   at,
@@ -208,12 +243,14 @@ function Slide({
   radius,
   fade,
   show,
+  video,
   onOpen,
 }: {
   item: LightboxItem
   index: number
   label: string
-  crop: Crop
+  /** Without one, the whole picture is fitted inside. */
+  crop?: Crop
   width: number
   x: MotionValue<number>
   at: number
@@ -222,6 +259,8 @@ function Slide({
   fade: boolean
   /** Whether to load the picture yet. */
   show: boolean
+  /** A video drawn by the app's own player, in place of its poster. */
+  video?: ReactNode
   onOpen: () => void
 }) {
   const place = useTrackPlace(x, at, [step, step])
@@ -231,7 +270,7 @@ function Slide({
       type="button"
       className="rml-gallery-slide"
       data-index={index}
-      style={{ x: place.left, opacity: fade ? place.opacity : 1, borderRadius: radius }}
+      style={{ x: place.left, opacity: fade ? place.opacity : 1, width, borderRadius: radius }}
       tabIndex={current ? 0 : -1}
       aria-hidden={!current || undefined}
       aria-label={label}
@@ -240,17 +279,28 @@ function Slide({
       onPointerEnter={() => void preload(item)}
       onFocus={() => void preload(item)}
     >
-      {show && (
+      {show && video ? (
+        <span className="rml-gallery-video">{video}</span>
+      ) : show ? (
         <img
           src={item.kind === 'image' ? item.src : item.poster}
           srcSet={item.kind === 'image' ? item.srcSet : undefined}
-          sizes={`${Math.ceil(width / w)}px`}
-          style={{ width: `${100 / w}%`, height: `${100 / h}%`, left: `${(-left / w) * 100}%`, top: `${(-top / h) * 100}%` }}
+          sizes={`${Math.ceil(width / (crop?.[2] ?? 1))}px`}
+          style={
+            crop
+              ? {
+                  width: `${100 / crop[2]}%`,
+                  height: `${100 / crop[3]}%`,
+                  left: `${(-crop[0] / crop[2]) * 100}%`,
+                  top: `${(-crop[1] / crop[3]) * 100}%`,
+                }
+              : { inset: 0, width: '100%', height: '100%', objectFit: 'contain' }
+          }
           alt=""
           decoding="async"
           draggable={false}
         />
-      )}
+      ) : null}
     </m.button>
   )
 }
