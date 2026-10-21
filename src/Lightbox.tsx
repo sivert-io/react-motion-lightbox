@@ -137,6 +137,9 @@ export function IconButton({ label, className, ...rest }: { label: string } & Bu
 }
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const
+/** A swipe down this far, in pixels, or this fast, in pixels a second, closes it. */
+const DISMISS = 120
+const DISMISS_SPEED = 800
 const WHOLE: Crop = [0, 0, 1, 1]
 
 const reducedMotion = () =>
@@ -213,7 +216,7 @@ const rest = (el: HTMLElement) => {
  * time and curve as the picture's move: they rise as it opens out of the
  * thumbnail and settle as it goes back, in one motion with it.
  */
-function backdrop(dialog: HTMLElement | null, from: 0 | 1, to: 0 | 1, duration: number) {
+function backdrop(dialog: HTMLElement | null, from: number, to: 0 | 1, duration: number) {
   const apply = (p: number) => dialog?.style.setProperty('--rml-p', String(p))
   apply(from)
   return animate(from, to, { duration, ease: EASE_OUT, onUpdate: apply })
@@ -553,8 +556,23 @@ function View<T extends LightboxItem>({
   // that ends a drag counting as a click.
   const panned = useRef(false)
   const zoomPan = useRef({ x: 0, y: 0 })
+  // A drag that starts mostly up or down pulls the picture away instead of
+  // moving the track: it follows the finger, shrinks a little, and the
+  // backdrop and blur thin out. Let go far or fast enough and it closes from
+  // there; otherwise it springs back.
+  const axis = useRef<'x' | 'y' | null>(null)
+  const dismissed = useRef(false)
+  const pull = (dy: number) => {
+    const p = Math.min(Math.abs(dy) / Math.max(box.height, 1), 1)
+    // The view clips at the stage's top and bottom; a picture being pulled can go past both.
+    view.current?.style.setProperty('overflow', 'visible')
+    zy.set(dy)
+    zs.set(1 - p * 0.25)
+    dialog.current?.style.setProperty('--rml-p', String(1 - Math.min(Math.abs(dy) / (box.height * 0.6 || 1), 1) * 0.8))
+  }
   const onPanStart = () => {
     if (pinch.current) return
+    axis.current = null
     if (zoomed()) {
       zoomPan.current = { x: zx.get(), y: zy.get() }
       return
@@ -570,11 +588,27 @@ function View<T extends LightboxItem>({
       zy.set(cy)
       return
     }
-    track.pan(info.offset.x)
+    if (!axis.current) {
+      if (Math.max(Math.abs(info.offset.x), Math.abs(info.offset.y)) < 8) return
+      axis.current = Math.abs(info.offset.y) > Math.abs(info.offset.x) ? 'y' : 'x'
+    }
+    if (axis.current === 'y') pull(info.offset.y)
+    else track.pan(info.offset.x)
   }
-  const onPanEnd = (_: unknown, { velocity }: PanInfo) => {
+  const onPanEnd = (_: unknown, { offset, velocity }: PanInfo) => {
     if (pinch.current || zoomed()) return
-    track.panEnd(velocity.x)
+    if (axis.current !== 'y') return track.panEnd(velocity.x)
+    track.panEnd(0)
+    if (Math.abs(offset.y) > DISMISS || Math.abs(velocity.y) > DISMISS_SPEED) {
+      dismissed.current = true
+      onClose()
+      return
+    }
+    const spring = { type: 'spring', stiffness: 380, damping: 36 } as const
+    void animate(zs, 1, spring)
+    void animate(zy, 0, spring).then(() => view.current?.style.removeProperty('overflow'))
+    const from = parseFloat(dialog.current?.style.getPropertyValue('--rml-p') || '1')
+    void animate(from, 1, { ...spring, onUpdate: (p) => dialog.current?.style.setProperty('--rml-p', String(p)) })
   }
   // A click, not the end of a drag. On the picture: the left half goes back,
   // the right half on. Beside it, in the empty space: closes. Two in quick
@@ -623,9 +657,19 @@ function View<T extends LightboxItem>({
     void (async () => {
       halt()
       x.jump(0)
-      zs.jump(1)
       zx.jump(0)
-      zy.jump(0)
+      // After a swipe down the picture is still where the finger let go. It
+      // eases back into the frame while the frame goes to the thumbnail, so
+      // the close starts from there instead of snapping to the middle.
+      const swiped = dismissed.current
+      if (swiped && !reducedMotion()) {
+        void animate(zs, 1, { duration: 0.45, ease: EASE_OUT })
+        void animate(zy, 0, { duration: 0.45, ease: EASE_OUT })
+      } else {
+        zs.jump(1)
+        zy.jump(0)
+      }
+      const shown = parseFloat(dialog.current?.style.getPropertyValue('--rml-p') || '1')
       setLeaving(true)
       setMoving(true)
       // Two frames: one for the owner to render the thumbnail, one to lay it out.
@@ -637,9 +681,9 @@ function View<T extends LightboxItem>({
         const to = rectOf(origin?.(index))
         if (to) {
           const crop = originCrop?.(index) ?? WHOLE
-          await Promise.all([morph(el, overThumb(el, to, crop), crop, radius, 1, 0, 0.45), backdrop(dialog.current, 1, 0, 0.45)])
+          await Promise.all([morph(el, overThumb(el, to, crop), crop, radius, 1, 0, 0.45), backdrop(dialog.current, shown, 0, 0.45)])
         } else {
-          await Promise.all([fade(el, false), backdrop(dialog.current, 1, 0, FADE)])
+          await Promise.all([fade(el, false), backdrop(dialog.current, shown, 0, FADE)])
         }
       }
       if (cancelled) return

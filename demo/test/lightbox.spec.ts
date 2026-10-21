@@ -89,3 +89,29 @@ test('nothing responds while the picture opens', async ({ page }) => {
   const transform = await dialog.locator('.rml-media:not([aria-hidden])').evaluate((el) => getComputedStyle(el).transform)
   expect(transform === 'none' || transform.startsWith('matrix(1, 0, 0, 1,')).toBe(true)
 })
+
+test('pulling the picture down closes it; a short pull springs back', async ({ page }) => {
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  const box = (await dialog.locator('.rml-view').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+
+  await page.mouse.move(cx, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx, cy + 50, { steps: 10 })
+  await page.mouse.up()
+  await page.waitForTimeout(800)
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('.rml-count')).toHaveText('1 / 9')
+
+  await page.mouse.move(cx, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx, cy + 260, { steps: 12 })
+  await page.mouse.up()
+  await expect(page.locator('dialog.rml')).toHaveCount(0, { timeout: 3000 })
+})
