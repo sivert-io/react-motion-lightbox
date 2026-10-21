@@ -113,7 +113,7 @@ export function App() {
           ))}
         </p>
         <p>
-          The logo is Framed Picture from Microsoft's{' '}
+          The logo is Grinning Face with Big Eyes from Microsoft's{' '}
           <a className="link" href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noreferrer">
             Fluent Emoji
           </a>
