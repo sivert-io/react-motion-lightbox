@@ -9,9 +9,9 @@ export interface Photo extends LightboxItem {
 
 type Framing = Pick<Photo, 'focus' | 'zoom'>
 
-// Each photo comes in three widths and a 480px square. The lightbox gets all
-// three widths as a srcset, so a phone downloads the small one and a 4K
-// screen the big one.
+// Each photo comes in three widths, the original when it's wider than those,
+// and a 480px square. The lightbox gets all the widths as a srcset, so a phone
+// downloads the small one and the widest screens the original.
 const photo = (
   id: string,
   width: number,
@@ -23,7 +23,9 @@ const photo = (
 ): Photo => ({
   kind: 'image',
   src: `/photos/${id}-1280.webp`,
-  srcSet: `/photos/${id}-1280.webp 1280w, /photos/${id}-2560.webp 2560w, /photos/${id}-3840.webp 3840w`,
+  srcSet:
+    `/photos/${id}-1280.webp 1280w, /photos/${id}-2560.webp 2560w, /photos/${id}-3840.webp 3840w` +
+    (width > 3840 ? `, /photos/${id}-full.webp ${width}w` : ''),
   sizes: '100vw',
   width,
   height,
@@ -74,11 +76,12 @@ export const ALBUMS: Album[] = [
   {
     id: "flowers",
     title: "Flowers",
-    blurb: "Three of them, up close.",
+    blurb: "Four of them, up close.",
     photos: [
       photo("yg24LApTKP4", 5178, 7752, "White daffodils with orange centres", "Theo Laflamme", "theolaflamme", { focus: [0.48, 0.5], zoom: 1.4 }),
       photo("WhCX_LVcCqg", 3072, 4608, "Yellow and orange heliopsis flowers", "Kristiina Klaas", "psilocybe53"),
       photo("zNXmmVyKEAg", 4480, 6720, "White flower petals", "Michael & Diane Weidner", "michaelbweidner", { focus: [0.5, 0.48], zoom: 1.3 }),
+      photo("LWokjHO-wCk", 4758, 7080, "Red anthurium flowers and green leaves", "Victoria V", "torirori", { focus: [0.55, 0.3], zoom: 1.2 }),
     ],
   },
   {
@@ -95,6 +98,33 @@ export const ALBUMS: Album[] = [
       photo("4sVimJidmpQ", 4671, 7006, "Fallow deer in a forest", "Evgeniy Bezkorovayniy", "korovay", { focus: [0.5, 0.46], zoom: 1.6 }),
       photo("nV1HMjvlOj4", 6862, 4538, "A modern building in the forest", "Caroline Badran", "___atmos", { focus: [0.67, 0.5], zoom: 1.4 }),
       photo("41lvjsoCJKA", 2267, 3400, "A leather lounge chair and side table", "Clay Banks", "claybanks", { focus: [0.35, 0.5], zoom: 1.2 }),
+      photo("bT1brkJbOgQ", 5464, 8192, "A woman in a cowboy hat", "Portraits of Modern Dairy", "portraitsofmoderndairy", { focus: [0.5, 0.25], zoom: 1.4 }),
+      photo("UegxIJUTX5E", 3862, 4827, "A man standing in a dark room", "rustam burkhanov", "rstm", { focus: [0.45, 0.3], zoom: 1.2 }),
+    ],
+  },
+  {
+    id: "further",
+    title: "Further afield",
+    blurb: "Trails, lakes, a fox, and two villages by the water.",
+    photos: [
+      photo("uqG-p4lBxwk", 3393, 5090, "A hiker on a rocky mountain trail", "Filip Kvasnak", "filipkvasnak", { focus: [0.5, 0.75], zoom: 1.3 }),
+      photo("NwmR1EDtiFg", 5228, 3485, "Someone with a backpack by a forest lake", "Filip Kvasnak", "filipkvasnak", { focus: [0.5, 0.62], zoom: 1.2 }),
+      photo("25hQHxmHg94", 5271, 6588, "A man on top of a rock under a stormy sky", "Mohammadreza Charkhgard", "mrcharkhgard", { focus: [0.48, 0.5], zoom: 1.3 }),
+      photo("xUUZcpQlqpM", 4928, 3280, "A fox on a snowy field", "Ray Hennessy", "rayhennessy", { focus: [0.4, 0.55] }),
+      photo("iFWGdUOAHIA", 5464, 8192, "A deer in a misty evergreen meadow", "Emma Swoboda", "emmakphoto", { focus: [0.48, 0.6], zoom: 2 }),
+      photo("q2dUSl9S4Xg", 6691, 4281, "Hallstatt reflected in the lake", "Sheng L", "parachutel_", { focus: [0.38, 0.55] }),
+      photo("cYrMQA7a3Wc", 2400, 1600, "Vernazza, a village on the Italian coast", "Anders Jildén", "andersjilden", { focus: [0.62, 0.6] }),
+    ],
+  },
+  {
+    id: "cars",
+    title: "Cars",
+    blurb: "Four of them, standing still for once.",
+    photos: [
+      photo("28RaDBx9F3g", 5892, 3939, "A white sports car in front of a building", "Isak Pettersson", "isakpetterssonfoto", { focus: [0.46, 0.6], zoom: 1.2 }),
+      photo("a8eTW9yyDLA", 4585, 6877, "A grey sports car in a pine forest", "Chris Saran", "shotby__chris", { focus: [0.53, 0.53], zoom: 1.5 }),
+      photo("4NnBGO4wwck", 3970, 5955, "A silver sports car by a wall", "Sijmen van Hooff", "sijmen89", { focus: [0.5, 0.52], zoom: 1.4 }),
+      photo("AA2M2L6_xzc", 4000, 6000, "A white car parked next to a wall", "yokatan", "yokatan", { focus: [0.5, 0.5], zoom: 1.3 }),
     ],
   },
 ]
