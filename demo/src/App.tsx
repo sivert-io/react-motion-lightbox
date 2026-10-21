@@ -9,6 +9,8 @@ import stylesSource from './styles.css?raw'
 const INSTALL = 'npm install react-motion-lightbox motion'
 const GITHUB = 'https://github.com/sivert-io/react-motion-lightbox'
 const NPM = 'https://www.npmjs.com/package/react-motion-lightbox'
+const NATIVE = 'https://github.com/sivert-io/react-native-motion-lightbox'
+const NATIVE_INSTALL = 'npm install react-native-motion-lightbox'
 
 // The theme block from this page's own stylesheet, so the snippet can't drift.
 const themeSource = stylesSource.slice(
@@ -34,6 +36,9 @@ export function App() {
           <Copyable text={INSTALL} />
           <a className="chip inline-flex items-center no-underline" href="#learn">
             Learn it step by step ↓
+          </a>
+          <a className="link whitespace-nowrap" href="#native">
+            React Native too
           </a>
         </div>
       </section>
@@ -100,6 +105,52 @@ export function App() {
           </a>
           .
         </p>
+      </section>
+
+      <section id="native" className="reveal mt-32 grid scroll-mt-8 items-center gap-x-16 gap-y-10 lg:grid-cols-2">
+        <div className="grid max-w-xl gap-5">
+          <p className="text-sm text-accent">For phone apps</p>
+          <h2 className="text-3xl sm:text-4xl">The same thing, for React Native</h2>
+          <p className="text-muted">
+            <code className="text-ink">react-native-motion-lightbox</code> opens out of the picture you tapped, the same
+            way. Swipe between pictures, pinch to zoom, and swipe down to close. Its <code className="text-ink">Gallery</code>{' '}
+            fits in a chat message, with the next picture peeking in at the edge.
+          </p>
+          <p className="text-muted">
+            The props have the same names wherever that made sense. It runs on Reanimated and Gesture Handler, with no
+            Expo modules, so it works in a bare app too.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Copyable text={NATIVE_INSTALL} />
+            <a className="link whitespace-nowrap" href={NATIVE}>
+              Read the docs
+            </a>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 items-start gap-4">
+          <figure className="m-0 grid gap-2">
+            <img
+              src="/native/message.webp"
+              alt="A chat message with four photos in a small gallery: a lighthouse is showing, and the next photo peeks in at the right edge"
+              width={600}
+              height={691}
+              loading="lazy"
+              className="rounded-card border border-rule"
+            />
+            <figcaption className="text-sm text-muted">In a chat message</figcaption>
+          </figure>
+          <figure className="m-0 grid gap-2">
+            <img
+              src="/native/lightbox.webp"
+              alt="The lightbox open full screen on the lighthouse, with the caption, the count and a row of thumbnails underneath"
+              width={600}
+              height={1304}
+              loading="lazy"
+              className="rounded-card border border-rule"
+            />
+            <figcaption className="text-sm text-muted">Open, on an iPhone simulator</figcaption>
+          </figure>
+        </div>
       </section>
 
       <footer className="reveal mt-24 grid gap-6 border-t border-rule pt-8 text-sm text-muted">
@@ -178,6 +229,9 @@ function Header() {
         </a>
         <a className="link whitespace-nowrap" href={NPM}>
           npm
+        </a>
+        <a className="link whitespace-nowrap max-sm:hidden" href="#native">
+          React Native
         </a>
         <ThemeToggle />
       </nav>
