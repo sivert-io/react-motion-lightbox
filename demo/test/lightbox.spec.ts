@@ -34,3 +34,20 @@ test('the wheel zooms the picture without scrolling the page', async ({ page }) 
   const scale = await view.locator('.rml-media:not([aria-hidden])').evaluate((el) => getComputedStyle(el).transform)
   expect(scale).not.toBe('none')
 })
+
+// The frame's copy for wrapping round from the last thumbnail to the first
+// sat one row-length to the left, and since the frame was drawn outside the
+// thumbnail it poked into the first one: two frames at once (Gryt, 0.2.0).
+test('only the current thumbnail is framed', async ({ page }) => {
+  await page.goto('/test/one.html?n=2')
+  await expect(page.locator('.rml-thumb')).toHaveCount(2)
+  await page.waitForTimeout(500)
+  const shown = await page.locator('.rml-thumb-frame').evaluateAll((frames) => {
+    const row = frames[0].closest('.rml-thumbs')!.getBoundingClientRect()
+    return frames.filter((f) => {
+      const r = f.getBoundingClientRect()
+      return getComputedStyle(f).opacity !== '0' && r.right > row.left + 1 && r.left < row.right - 1
+    }).length
+  })
+  expect(shown).toBe(1)
+})

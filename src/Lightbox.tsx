@@ -908,10 +908,14 @@ function ThumbFrame({ pos, n }: { pos: MotionValue<number>; n: number }) {
   }, [grid, n])
   const left = useTransform(() => grid.get().first + pos.get() * grid.get().step)
   const copy = useTransform(() => left.get() - n * grid.get().step)
+  // The copy is only there while the track wraps from the last item to the
+  // first. Parked a row's length to the left the rest of the time, it poked
+  // into the first thumbnail once the frame was drawn outside the thumbnails.
+  const wrapping = useTransform(() => (pos.get() > n - 1 ? 1 : 0))
   return (
     <span ref={layer} className="rml-thumb-layer" style={{ width: width || undefined }} aria-hidden="true">
       <m.span className="rml-thumb-frame" style={{ x: left }} />
-      <m.span className="rml-thumb-frame" style={{ x: copy }} />
+      <m.span className="rml-thumb-frame" style={{ x: copy, opacity: wrapping }} />
     </span>
   )
 }
