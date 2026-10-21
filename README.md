@@ -99,6 +99,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 |---|---|
 | `aspect` | The box's width over its height. Default `1`, a square. |
 | `loading` | `'lazy'` (the default) loads the pictures once the gallery is within half a screen of being seen. `'eager'` loads them straight away: use it for a gallery at the top of the page. |
+| `autoplay` | Move on by itself every this many milliseconds, like `6000`. It holds while the pointer or focus is on the gallery or the lightbox is open, adds a pause button, and stays still with reduced motion. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 
 `className` goes on both the gallery and the lightbox. `cropOf(item, aspect)` gives you the same crop, if you build your own.
@@ -121,8 +122,8 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `thumbnails` | The row of thumbnails when there's more than one item. Default `true`. |
 | `maxZoom` | Default `8`. |
 | `radius` | Corner radius in px. It stays the same all the way through the opening move. Default `12`. |
-| `labels` | `{ dialog, close, previous, next }`, if you need other words or another language. |
-| `icons` | `{ close, previous, next }`, any React node. The defaults are plain SVGs. |
+| `labels` | `{ dialog, close, previous, next, pause, play }`, if you need other words or another language. `pause` and `play` are the gallery's slideshow button. |
+| `icons` | `{ close, previous, next, pause, play }`, any React node. The defaults are plain SVGs. |
 | `className` | Goes on the `<dialog>`. |
 
 `preload(item)` downloads an item the same way the lightbox will show it. Call it on hover and the picture is there before the click.

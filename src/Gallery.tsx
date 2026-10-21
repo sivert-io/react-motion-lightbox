@@ -13,7 +13,7 @@ import {
   type LightboxItem,
   type LightboxProps,
 } from './Lightbox.js'
-import { GAP, useTrack, useTrackPlace } from './track.js'
+import { GAP, reducedMotion, useTrack, useTrackPlace } from './track.js'
 
 export interface GalleryProps<T extends LightboxItem = LightboxItem>
   extends Omit<LightboxProps<T>, 'index' | 'open' | 'onClose' | 'onExited' | 'origin' | 'originCrop'> {
@@ -31,6 +31,12 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
    * `'eager'` for a gallery at the top.
    */
   loading?: 'lazy' | 'eager'
+  /**
+   * Move on by itself every this many milliseconds, like a slideshow. It holds
+   * while the pointer or focus is on the gallery or the lightbox is open,
+   * there's a button to pause it, and it stays still with reduced motion.
+   */
+  autoplay?: number
 }
 
 /**
@@ -40,7 +46,7 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
  * with the whole picture. Takes the lightbox's props and passes them on.
  * `className` goes on both.
  */
-export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loading = 'lazy', ...props }: GalleryProps<T>) {
+export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loading = 'lazy', autoplay, ...props }: GalleryProps<T>) {
   const { items, caption, className, onIndexChange, radius = 12 } = props
   const labels = { ...DEFAULT_LABELS, ...props.labels }
   const icons = { ...DEFAULT_ICONS, ...props.icons }
@@ -80,9 +86,26 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
   // A drag ends in a click. That one shouldn't open the lightbox.
   const dragged = useRef(false)
 
+  // The slideshow. Held while someone is on the gallery, so it never moves out
+  // from under them, and paused for good with the button (WCAG 2.2.2).
+  const [held, setHeld] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const playing = Boolean(autoplay) && many && !paused
+  useEffect(() => {
+    if (!playing || held || open || reducedMotion()) return
+    const timer = setTimeout(() => go(1), autoplay)
+    return () => clearTimeout(timer)
+    // Restarts on every move, so an arrow click gets a full turn too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, held, open, index])
+
   return (
     <div
       className={['rml-gallery', className].filter(Boolean).join(' ')}
+      onPointerEnter={() => setHeld(true)}
+      onPointerLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={(event) => !event.currentTarget.contains(event.relatedTarget) && setHeld(false)}
       onKeyDown={(event) => {
         // The lightbox's keys bubble up here through React's tree as well.
         if (open || !many || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
@@ -142,10 +165,16 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loadi
               <IconButton label={labels.previous} onClick={() => go(-1)}>
                 {icons.previous}
               </IconButton>
-              <span className="rml-count" aria-live="polite">{`${index + 1} / ${n}`}</span>
+              {/* Quiet while it turns by itself, or it would talk every few seconds. */}
+              <span className="rml-count" aria-live={playing && !held ? 'off' : 'polite'}>{`${index + 1} / ${n}`}</span>
               <IconButton label={labels.next} onClick={() => go(1)}>
                 {icons.next}
               </IconButton>
+              {autoplay ? (
+                <IconButton label={paused ? labels.play : labels.pause} onClick={() => setPaused((p) => !p)}>
+                  {paused ? icons.play : icons.pause}
+                </IconButton>
+              ) : null}
             </div>
           )}
         </div>

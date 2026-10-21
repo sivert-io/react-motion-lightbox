@@ -52,12 +52,17 @@ export interface LightboxLabels {
   close: string
   previous: string
   next: string
+  /** The gallery's slideshow button. */
+  pause: string
+  play: string
 }
 
 export interface LightboxIcons {
   close: ReactNode
   previous: ReactNode
   next: ReactNode
+  pause: ReactNode
+  play: ReactNode
 }
 
 export interface LightboxProps<T extends LightboxItem = LightboxItem> {
@@ -108,8 +113,17 @@ export const DEFAULT_ICONS: LightboxIcons = {
   close: svg('M200 56 56 200M56 56l144 144'),
   previous: svg('M160 208 80 128l80-80'),
   next: svg('m96 48 80 80-80 80'),
+  pause: svg('M96 56v144M160 56v144'),
+  play: svg('M88 52v152l112-76z'),
 }
-export const DEFAULT_LABELS: LightboxLabels = { dialog: 'Image viewer', close: 'Close', previous: 'Previous', next: 'Next' }
+export const DEFAULT_LABELS: LightboxLabels = {
+  dialog: 'Image viewer',
+  close: 'Close',
+  previous: 'Previous',
+  next: 'Next',
+  pause: 'Pause slideshow',
+  play: 'Play slideshow',
+}
 
 /** A round button with an icon, labelled for screen readers and with a tooltip for the mouse. */
 export function IconButton({ label, className, ...rest }: { label: string } & ButtonHTMLAttributes<HTMLButtonElement>) {

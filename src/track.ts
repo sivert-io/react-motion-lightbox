@@ -16,7 +16,7 @@ export const GAP = 48
 
 // With reduced motion, moves land at once instead of gliding (WCAG 2.3.3).
 // A drag still follows the finger: that motion is the reader's own.
-const reducedMotion = () =>
+export const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
