@@ -24,6 +24,13 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
    * off and they slide out past the edges instead, fading as they go.
    */
   clip?: boolean
+  /**
+   * When the pictures load. Default `'lazy'`: once the gallery is within half a
+   * screen of being seen, so one further down the page costs nothing until
+   * then. The browser's own lazy loading reaches much further ahead. Use
+   * `'eager'` for a gallery at the top.
+   */
+  loading?: 'lazy' | 'eager'
 }
 
 /**
@@ -33,7 +40,7 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
  * with the whole picture. Takes the lightbox's props and passes them on.
  * `className` goes on both.
  */
-export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, ...props }: GalleryProps<T>) {
+export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, loading = 'lazy', ...props }: GalleryProps<T>) {
   const { items, caption, className, onIndexChange, radius = 12 } = props
   const labels = { ...DEFAULT_LABELS, ...props.labels }
   const icons = { ...DEFAULT_ICONS, ...props.icons }
@@ -49,6 +56,13 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, ...pr
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+  const [near, setNear] = useState(loading === 'eager')
+  useEffect(() => {
+    if (near) return
+    const observer = new IntersectionObserver(([entry]) => entry.isIntersecting && setNear(true), { rootMargin: '50% 0px' })
+    observer.observe(box.current!)
+    return () => observer.disconnect()
+  }, [near])
 
   // Every picture is the box's size, so a neighbour is one box and a gap away.
   const step = width + GAP
@@ -109,6 +123,7 @@ export function Gallery<T extends LightboxItem>({ aspect = 1, clip = true, ...pr
                 step={step}
                 radius={radius}
                 fade={!clip}
+                show={near}
                 onOpen={() => {
                   if (dragged.current) return
                   track.jump(i)
@@ -163,6 +178,7 @@ function Slide({
   step,
   radius,
   fade,
+  show,
   onOpen,
 }: {
   item: LightboxItem
@@ -175,6 +191,8 @@ function Slide({
   step: number
   radius: number
   fade: boolean
+  /** Whether to load the picture yet. */
+  show: boolean
   onOpen: () => void
 }) {
   const place = useTrackPlace(x, at, [step, step])
@@ -193,14 +211,17 @@ function Slide({
       onPointerEnter={() => void preload(item)}
       onFocus={() => void preload(item)}
     >
-      <img
-        src={item.kind === 'image' ? item.src : item.poster}
-        srcSet={item.kind === 'image' ? item.srcSet : undefined}
-        sizes={`${Math.ceil(width / w)}px`}
-        style={{ width: `${100 / w}%`, height: `${100 / h}%`, left: `${(-left / w) * 100}%`, top: `${(-top / h) * 100}%` }}
-        alt=""
-        draggable={false}
-      />
+      {show && (
+        <img
+          src={item.kind === 'image' ? item.src : item.poster}
+          srcSet={item.kind === 'image' ? item.srcSet : undefined}
+          sizes={`${Math.ceil(width / w)}px`}
+          style={{ width: `${100 / w}%`, height: `${100 / h}%`, left: `${(-left / w) * 100}%`, top: `${(-top / h) * 100}%` }}
+          alt=""
+          decoding="async"
+          draggable={false}
+        />
+      )}
     </m.button>
   )
 }

@@ -98,6 +98,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | Prop | |
 |---|---|
 | `aspect` | The box's width over its height. Default `1`, a square. |
+| `loading` | `'lazy'` (the default) loads the pictures once the gallery is within half a screen of being seen. `'eager'` loads them straight away: use it for a gallery at the top of the page. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 
 `className` goes on both the gallery and the lightbox. `cropOf(item, aspect)` gives you the same crop, if you build your own.
