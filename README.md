@@ -1,3 +1,5 @@
+<img src="docs/logo.svg" width="72" height="72" alt="">
+
 # react-motion-lightbox
 
 A lightbox for React. It opens out of the thumbnail you clicked and closes back into it.
@@ -161,4 +163,4 @@ I've run it on React 19 with Motion 12 and 14. React 18 should work, but I haven
 
 ## License
 
-MIT
+MIT. The logo is Framed Picture from Microsoft's [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), also MIT ([its licence](docs/fluent-emoji-LICENSE)).

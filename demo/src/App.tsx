@@ -113,6 +113,13 @@ export function App() {
           ))}
         </p>
         <p>
+          The logo is Framed Picture from Microsoft's{' '}
+          <a className="link" href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noreferrer">
+            Fluent Emoji
+          </a>
+          , MIT licensed.
+        </p>
+        <p>
           MIT licensed. Made by{' '}
           <a className="link" href="https://gullberg.no">
             Sivert Gullberg Hansen
@@ -127,7 +134,8 @@ export function App() {
 function Header() {
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-rule py-5">
-      <a href="/" className="font-display text-lg whitespace-nowrap no-underline">
+      <a href="/" className="flex items-center gap-3 font-display text-lg whitespace-nowrap no-underline">
+        <img src="/logo.svg" alt="" width={32} height={32} />
         react-motion-lightbox
       </a>
       <nav className="flex items-center gap-5 text-sm" aria-label="Links">
