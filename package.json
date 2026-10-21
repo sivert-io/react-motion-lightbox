@@ -1,6 +1,6 @@
 {
   "name": "react-motion-lightbox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A React lightbox that opens out of its thumbnail: a draggable track, pinch, wheel and double-tap zoom, and slots for your own video player, toolbar and title. Built on Motion.",
   "license": "MIT",
   "author": "Sivert Gullberg Hansen <sivertgullberg@gmail.com>",
@@ -10,9 +10,19 @@
   },
   "homepage": "https://github.com/sivert-io/react-motion-lightbox#readme",
   "bugs": "https://github.com/sivert-io/react-motion-lightbox/issues",
-  "keywords": ["react", "lightbox", "gallery", "motion", "framer-motion", "zoom", "image-viewer"],
+  "keywords": [
+    "react",
+    "lightbox",
+    "gallery",
+    "motion",
+    "framer-motion",
+    "zoom",
+    "image-viewer"
+  ],
   "type": "module",
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +33,11 @@
     },
     "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json && cp src/styles.css dist/styles.css",
     "typecheck": "tsc -p tsconfig.json --noEmit",
