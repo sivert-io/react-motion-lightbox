@@ -113,7 +113,7 @@ export function App() {
           ))}
         </p>
         <p>
-          The logo is Grinning Face with Big Eyes from Microsoft's{' '}
+          The logo is Brown Mushroom from Microsoft's{' '}
           <a className="link" href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noreferrer">
             Fluent Emoji
           </a>
@@ -135,7 +135,9 @@ function Header() {
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-rule py-5">
       <a href="/" className="flex items-center gap-3 font-display text-lg whitespace-nowrap no-underline">
-        <img src="/logo.svg" alt="" width={32} height={32} />
+        <span className="logo">
+          <img src="/logo.svg" alt="" width={32} height={32} />
+        </span>
         react-motion-lightbox
       </a>
       <nav className="flex items-center gap-5 text-sm" aria-label="Links">

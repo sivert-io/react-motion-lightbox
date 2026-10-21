@@ -163,4 +163,4 @@ I've run it on React 19 with Motion 12 and 14. React 18 should work, but I haven
 
 ## License
 
-MIT. The logo is Grinning Face with Big Eyes from Microsoft's [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), also MIT ([its licence](docs/fluent-emoji-LICENSE)).
+MIT. The logo is Brown Mushroom from Microsoft's [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), also MIT ([its licence](docs/fluent-emoji-LICENSE)).
