@@ -219,6 +219,8 @@ export function Gallery<T extends LightboxItem>({
                 index={i}
                 label={items[i].alt || `${i + 1} / ${n}`}
                 crop={fit === 'cover' ? crop(i) : undefined}
+                ratio={aspect}
+                natural={natural(items[i])}
                 width={slideWidth}
                 x={x}
                 at={at}
@@ -299,6 +301,8 @@ function Slide({
   index,
   label,
   crop,
+  ratio,
+  natural,
   width,
   x,
   at,
@@ -314,6 +318,9 @@ function Slide({
   label: string
   /** Without one, the whole picture is fitted inside. */
   crop?: Crop
+  /** The slide's width over its height. */
+  ratio: number
+  natural: { width: number; height: number }
   width: number
   x: MotionValue<number>
   at: number
@@ -357,7 +364,7 @@ function Slide({
                   left: `${(-crop[0] / crop[2]) * 100}%`,
                   top: `${(-crop[1] / crop[3]) * 100}%`,
                 }
-              : { inset: 0, width: '100%', height: '100%', objectFit: 'contain' }
+              : contain(natural.width / natural.height / ratio, radius)
           }
           alt=""
           decoding="async"
@@ -366,4 +373,10 @@ function Slide({
       ) : null}
     </m.button>
   )
+}
+
+/** A whole picture fitted in its slide and centred, its own corners rounded. `r` is its shape over the slide's. */
+function contain(r: number, radius: number) {
+  const [w, h] = r >= 1 ? [100, 100 / r] : [100 * r, 100]
+  return { width: `${w}%`, height: `${h}%`, left: `${(100 - w) / 2}%`, top: `${(100 - h) / 2}%`, borderRadius: radius }
 }
