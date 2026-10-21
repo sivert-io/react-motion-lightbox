@@ -125,6 +125,9 @@ export function App() {
             <a className="link whitespace-nowrap" href={NATIVE}>
               Read the docs
             </a>
+            <a className="link whitespace-nowrap" href="https://www.npmjs.com/package/react-native-motion-lightbox">
+              npm
+            </a>
           </div>
         </div>
         <div className="grid grid-cols-2 items-start gap-4">

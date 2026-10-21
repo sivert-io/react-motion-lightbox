@@ -21,7 +21,7 @@
   <a href="https://github.com/sivert-io/react-native-motion-lightbox">React Native version</a>
 </p>
 
-A lightbox for React. It opens out of the thumbnail you clicked and closes back into it.
+A lightbox for React. It opens out of the thumbnail you clicked and closes back into it. Building a phone app? [react-native-motion-lightbox](https://github.com/sivert-io/react-native-motion-lightbox) does the same in React Native, with the same props.
 
 I built it for my own site, [gullberg.no](https://gullberg.no), and pulled it out into a package so [Gryt](https://gryt.chat) can use it too.
 
