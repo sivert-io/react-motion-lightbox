@@ -25,6 +25,12 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
    */
   clip?: boolean
   /**
+   * With `clip` off, whether pictures fade as they leave the box. Default
+   * true. Off, they stay fully visible on either side, like a carousel, and
+   * whatever the gallery sits in decides how far out they show.
+   */
+  fade?: boolean
+  /**
    * When the pictures load. Default `'lazy'`: once the gallery is within half a
    * screen of being seen, so one further down the page costs nothing until
    * then. The browser's own lazy loading reaches much further ahead. Use
@@ -65,6 +71,7 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
 export function Gallery<T extends LightboxItem>({
   aspect = 1,
   clip = true,
+  fade = true,
   loading = 'lazy',
   autoplay,
   fit = 'cover',
@@ -198,6 +205,13 @@ export function Gallery<T extends LightboxItem>({
               // With a peek, the one after next shows at the edge as the next
               // one slides in, so it has to be there before the move ends.
               ...(peek > 0 && n > 3 ? [{ i: (next + 1) % n, at: 2 * step }] : []),
+              // Shown in full on either side, two more each way are in sight.
+              ...(!clip && !fade && n > 5
+                ? [
+                    { i: (prev - 1 + n) % n, at: -2 * step },
+                    ...(peek > 0 ? [] : [{ i: (next + 1) % n, at: 2 * step }]),
+                  ]
+                : []),
             ].map(({ i, at }) => (
               <Slide
                 key={i}
@@ -210,7 +224,7 @@ export function Gallery<T extends LightboxItem>({
                 at={at}
                 step={step}
                 radius={radius}
-                fade={!clip}
+                fade={!clip && fade}
                 show={near}
                 video={renderVideo && items[i].kind === 'video' ? renderVideo(items[i], { active: at === 0 }) : undefined}
                 onOpen={() => {

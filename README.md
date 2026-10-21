@@ -129,6 +129,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
+| `fade` | With `clip={false}`, whether pictures fade as they leave the box. Default `true`. Set it to `false` and they stay fully visible on either side, like a carousel. Whatever the gallery sits in decides how far out they show. |
 
 `className` goes on both the gallery and the lightbox. A video shows its `poster`, or your own player if you pass `renderVideo`. `active` is true for the one on screen. If you build a gallery of your own, `cropOf(item, aspect)` gives you the same crop.
 

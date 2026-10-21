@@ -211,11 +211,13 @@ export function ShapeLesson({ n }: { n: number }) {
   const [clip, setClip] = useState(true)
   const [whole, setWhole] = useState(false)
   const [peek, setPeek] = useState(false)
+  const [fade, setFade] = useState(true)
   const props = [
     shape.aspect !== 1 && `aspect={${shape.code}}`,
     whole && `fit="contain"`,
     peek && 'peek={56} gap={12}',
     !clip && 'clip={false}',
+    !clip && !fade && 'fade={false}',
   ]
     .filter(Boolean)
     .join(' ')
@@ -248,6 +250,11 @@ export function ShapeLesson({ n }: { n: number }) {
             <Switch checked={clip} onChange={setClip}>
               Overflow hidden
             </Switch>
+            {!clip && (
+              <Switch checked={fade} onChange={setFade}>
+                Fade at the edges
+              </Switch>
+            )}
           </div>
           <div style={{ maxWidth: `min(100%, 60svh * ${shape.aspect})` }}>
             <Gallery
@@ -256,6 +263,7 @@ export function ShapeLesson({ n }: { n: number }) {
               radius={14}
               aspect={shape.aspect}
               clip={clip}
+              fade={fade}
               fit={whole ? 'contain' : 'cover'}
               peek={peek ? 56 : 0}
               gap={peek ? 12 : undefined}
@@ -273,7 +281,7 @@ export function ShapeLesson({ n }: { n: number }) {
       </p>
       <p>
         By default the box cuts photos off at its edges as they slide. Turn <code>clip</code> off and they slide out past
-        them, fading as they go.
+        them, fading as they go. Turn <code>fade</code> off too and they stay in full view, like a carousel.
       </p>
       <Code name="Gallery.tsx">{`<Gallery items={photos}${props ? ' ' + props : ''} />`}</Code>
     </Step>

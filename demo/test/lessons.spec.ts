@@ -34,3 +34,16 @@ test('with peek, the one after next is there while the next slides in', async ({
   await page.waitForTimeout(250)
   await expect(step.locator('.rml-gallery-slide[data-index="2"]')).toHaveCount(1)
 })
+
+test('with clip and fade off, the neighbours stay fully visible', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  const step = page.locator('#learn ol > li').nth(3)
+  await step.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }))
+  await step.getByRole('switch', { name: 'Overflow hidden' }).click()
+  await step.getByRole('switch', { name: 'Fade at the edges' }).click()
+  await page.waitForTimeout(300)
+  const next = step.locator('.rml-gallery-slide[data-index="1"]')
+  expect(await next.evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
+  await expect(step.locator('.rml-gallery-slide')).toHaveCount(5)
+})
