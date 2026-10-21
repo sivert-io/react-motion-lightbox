@@ -1,4 +1,5 @@
-# Builds demo/ and puts it on GitHub Pages (lightbox.gullberg.no).
+# Builds the demo and runs its checks. The site itself runs on edition35
+# (demo/docker-compose.yml), not GitHub Pages.
 name: Demo
 
 on:
@@ -9,19 +10,10 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     defaults:
       run:
         working-directory: demo
@@ -36,8 +28,3 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: demo/dist
-      - id: deployment
-        uses: actions/deploy-pages@v4

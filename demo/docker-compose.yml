@@ -1,0 +1,47 @@
+# lightbox.gullberg.no: the demo, as a static site behind Cloudflare Tunnel.
+# Run from the repository root:
+#
+#   docker compose -f demo/docker-compose.yml up -d --build
+#
+# Set up like gullberg.no's: a read-only nginx on one port, used for the host
+# binding, nginx's `listen` and the healthcheck alike.
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: demo/docker/Dockerfile
+    image: react-motion-lightbox-demo:latest
+    container_name: react-motion-lightbox-demo
+    restart: unless-stopped
+
+    environment:
+      PORT: ${PORT:-3545}
+
+    ports:
+      # All interfaces, so a cloudflared in its own container can reach it.
+      - '${BIND_ADDR:-0.0.0.0}:${PORT:-3545}:${PORT:-3545}'
+
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:${PORT:-3545}/']
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+    # Nothing is written at runtime but nginx's scratch space and the rendered config.
+    read_only: true
+    tmpfs:
+      - /etc/nginx/conf.d
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'

@@ -1,0 +1,11 @@
+# Only the demo image is built from here (demo/docker/Dockerfile).
+**/node_modules
+**/dist
+**/dist-ssr
+.git
+docs
+demo/test
+demo/test-results
+demo/playwright-report
+*.tgz
+.DS_Store
