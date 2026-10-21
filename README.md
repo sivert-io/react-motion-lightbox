@@ -25,16 +25,11 @@ A lightbox for React. It opens out of the thumbnail you clicked and closes back 
 
 I built it for my own site, [gullberg.no](https://gullberg.no), and pulled it out into a package so [Gryt](https://gryt.chat) can use it too.
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/open.webp" alt="The lightbox open on a gallery of eight screenshots, with the thumbnail row underneath"></td>
-    <td width="50%"><img src="docs/slide.webp" alt="Halfway through a move to the next picture: the current one slides out to the left while the next comes in from the right"></td>
-  </tr>
-  <tr>
-    <td align="center">Open, with the thumbnail row</td>
-    <td align="center">Halfway to the next picture</td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/trailer.webp" width="100%" alt="On a desktop: dragging a square album photo to the next one, clicking it so it opens out into the lightbox, going to the next photo and closing it back into the square. Then the same on a phone, beside the words Works on a phone too.">
+</p>
+
+<p align="center"><sub>Recorded from <a href="https://lightbox.gullberg.no">the demo</a>. <a href="docs/trailer.mp4">As a video</a>.</sub></p>
 
 ## What it does
 

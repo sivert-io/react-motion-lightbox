@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- The phone scene's background in the trailer (scripts/trailer.sh): the text,
+     and a shadow where the phone recording goes. 1280x720. -->
+<html lang="en">
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: 'Young Serif'; src: url('../public/fonts/young-serif.woff2'); }
+  @font-face { font-family: 'Figtree'; src: url('../public/fonts/figtree.woff2'); font-weight: 400 600; }
+  @font-face { font-family: 'JetBrains Mono'; src: url('../public/fonts/jetbrains-mono.woff2'); }
+  :root {
+    --paper: oklch(97.5% 0.012 40);
+    --paper-2: oklch(95% 0.018 38);
+    --ink: oklch(26% 0.04 25);
+    --muted: oklch(45% 0.04 25);
+    --rule: oklch(88% 0.022 32);
+    --accent: oklch(47% 0.12 25);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    width: 1280px;
+    height: 720px;
+    overflow: hidden;
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Figtree', sans-serif;
+  }
+  .text { position: absolute; left: 112px; top: 50%; translate: 0 -50%; width: 620px; }
+  .label { margin: 0; color: var(--accent); font-size: 20px; }
+  h1 { margin: 14px 0 0; font: 54px/1.08 'Young Serif', serif; }
+  p { margin: 22px 0 0; color: var(--muted); font-size: 22px; line-height: 1.5; }
+  code { color: var(--ink); font: 0.92em 'JetBrains Mono', monospace; white-space: nowrap; }
+  /* Where the phone recording goes: x 848, y 40, 296 x 640, corners 28. */
+  .phone {
+    position: absolute;
+    left: 848px;
+    top: 40px;
+    width: 296px;
+    height: 640px;
+    border-radius: 28px;
+    background: var(--paper-2);
+    box-shadow: 0 2px 6px oklch(30% 0.05 25 / 0.12), 0 24px 60px oklch(30% 0.05 25 / 0.18);
+  }
+</style>
+<body>
+  <div class="text">
+    <p class="label">On a phone</p>
+    <h1>Works on a phone too.</h1>
+    <p>Swipe through, tap to open, and it grows out of the photo the same way.</p>
+    <p>Building a React Native app?<br /><code>react-native-motion-lightbox</code> has the same props.</p>
+  </div>
+  <div class="phone"></div>
+</body>
+</html>
