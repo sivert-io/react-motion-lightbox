@@ -20,6 +20,9 @@
   --accent-ink: oklch(98% 0.01 85);
   --focus: oklch(56% 0.13 42);
   --shadow: 0 1px 2px oklch(40% 0.03 60 / 0.08), 0 8px 24px oklch(40% 0.03 60 / 0.08);
+  /* Over a photo, the same in both themes. */
+  --scrim: oklch(15% 0.01 60 / 0.55);
+  --on-photo: oklch(98% 0.005 85);
 
   --font-display: 'Young Serif', ui-serif, Georgia, serif;
   --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
@@ -69,6 +72,8 @@
   --color-rule: var(--rule);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
+  --color-scrim: var(--scrim);
+  --color-on-photo: var(--on-photo);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-code: var(--font-code);
@@ -119,6 +124,67 @@ a {
 }
 .link:hover {
   text-decoration-thickness: 2px;
+}
+
+/* What to try next, in the walkthrough. */
+.hint {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-tile) var(--radius-tile) 0;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+/* The whole photo, with the square the album shows drawn on it. */
+.picker {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+.picker img {
+  display: block;
+  width: 100%;
+}
+.picker-crop {
+  position: absolute;
+  border: 2px solid var(--on-photo);
+  border-radius: 6px;
+  box-shadow: 0 0 0 100vmax var(--scrim);
+  pointer-events: none;
+}
+.picker-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  border: 2px solid var(--on-photo);
+  border-radius: 999px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.chip {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.chip:hover {
+  background: var(--paper-3);
+}
+.chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* Code: a plain block on the raised paper, no fake window chrome. */

@@ -1,4 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import { DragLesson, FocusLesson, ShapeLesson } from './Lessons'
+import { Code, Copyable, Step } from './ui'
 import { Album } from './Album'
 import { ALBUMS } from './photos'
 import albumSource from './Album.tsx?raw'
@@ -13,10 +15,6 @@ const themeSource = stylesSource.slice(
   stylesSource.indexOf('.rml.demo {'),
   stylesSource.indexOf('}', stylesSource.indexOf('.rml.demo {')) + 1,
 )
-
-// One photo as the lightbox gets it, from the first album.
-const { thumb: _thumb, photographer: _photographer, profile: _profile, ...firstItem } = ALBUMS[0].photos[0]
-const itemSource = `const photo: LightboxItem = ${JSON.stringify(firstItem, null, 2).replace(/"([a-zA-Z]+)":/g, '$1:')}`
 
 const PHOTOGRAPHERS = [...new Map(ALBUMS.flatMap((a) => a.photos).map((p) => [p.profile, p.photographer]))]
 
@@ -33,8 +31,8 @@ export function App() {
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Copyable text={INSTALL} />
-          <a className="link whitespace-nowrap" href="#setup">
-            How it's set up
+          <a className="link whitespace-nowrap" href="#learn">
+            Learn it step by step
           </a>
         </div>
       </section>
@@ -63,40 +61,37 @@ export function App() {
         ))}
       </div>
 
-      <section id="setup" className="mt-24 max-w-3xl scroll-mt-8">
-        <h2 className="text-3xl sm:text-4xl">How this page uses it</h2>
-        <p className="mt-4 text-muted">
-          Everything below is the real code behind the albums above. Copy it, change the photos, and you have the same
-          thing.
+      <section id="learn" className="mt-32 scroll-mt-8">
+        <h2 className="text-3xl sm:text-4xl">Learn it step by step</h2>
+        <p className="mt-4 max-w-2xl text-muted">
+          Try each step on the right, and copy its code on the left. The last step is the real code behind the albums
+          above.
         </p>
 
-        <ol className="mt-10 grid gap-12">
+        <ol className="mt-12 grid gap-20">
           <Step n={1} title="Install it, with Motion next to it">
             <Code name="Terminal">{INSTALL}</Code>
           </Step>
-          <Step n={2} title="Describe your photos">
+          <DragLesson n={2} />
+          <FocusLesson n={3} />
+          <ShapeLesson n={4} />
+          <Step n={5} title="Make it look like your site">
             <p>
-              Give it a width and height if you know them. If you don't, it measures each photo when it loads. A{' '}
-              <code>srcSet</code> lets a phone download a smaller file than a 4K screen. <code>focus</code> and{' '}
-              <code>zoom</code> pick the part the album's square shows.
+              Everything it draws takes its colours from a few CSS variables. <code>--rml-blur</code> blurs the page
+              behind the open lightbox, and the blur rises and settles as it opens and closes. These are this page's.
             </p>
-            <Code name="One photo">{itemSource}</Code>
+            <Code name="styles.css">{themeSource}</Code>
           </Step>
-          <Step n={3} title="Put them in a Gallery">
+          <Step n={6} title="All together">
             <p>
-              This is the whole <code>Album</code> component on this page. <code>Gallery</code> is the small lightbox:
-              one photo at a time, on the same track the big one moves on. It takes the lightbox's props and passes them
-              on.
+              This is the whole <code>Album</code> component behind the albums above. <code>Gallery</code> takes the
+              lightbox's props and passes them on, so the caption and the title go to both.
             </p>
             <Code name="Album.tsx">{albumSource.trim()}</Code>
           </Step>
-          <Step n={4} title="Make it look like your site">
-            <p>Everything it draws takes its colours from a few CSS variables. These are this page's.</p>
-            <Code name="styles.css">{themeSource}</Code>
-          </Step>
         </ol>
 
-        <p className="mt-12 text-muted">
+        <p className="mt-16 max-w-3xl text-muted">
           The rest of the options, like video, a toolbar and your own icons, are in the{' '}
           <a className="link" href={`${GITHUB}#props`}>
             README
@@ -177,65 +172,6 @@ function ThemeToggle() {
       aria-label={`Theme: ${theme}. Switch to ${next}`}
     >
       {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
-    </button>
-  )
-}
-
-function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
-  return (
-    <li className="grid gap-4">
-      <h3 className="flex items-baseline gap-3 text-xl sm:text-2xl">
-        <span className="font-body text-base text-accent tabular-nums">{n}</span>
-        {title}
-      </h3>
-      <div className="grid gap-4 text-muted [&_code]:text-ink">{children}</div>
-    </li>
-  )
-}
-
-function Code({ name, children }: { name: string; children: string }) {
-  return (
-    <figure className="m-0 grid min-w-0 gap-2">
-      <figcaption className="flex items-center justify-between gap-4 pl-1 text-sm">
-        <code>{name}</code>
-        <CopyButton text={children} />
-      </figcaption>
-      <pre className="text-ink">
-        <code>{children}</code>
-      </pre>
-    </figure>
-  )
-}
-
-/** The install line as one thing to copy. */
-function Copyable({ text }: { text: string }) {
-  return (
-    <div className="flex min-w-0 items-center gap-2 rounded-full border border-rule bg-paper-2 py-1.5 pr-1.5 pl-5">
-      <code className="truncate text-ink">{text}</code>
-      <CopyButton text={text} />
-    </div>
-  )
-}
-
-function CopyButton({ text, className = '' }: { text: string; className?: string }) {
-  const [copied, setCopied] = useState(false)
-  useEffect(() => {
-    if (!copied) return
-    const timer = setTimeout(() => setCopied(false), 1600)
-    return () => clearTimeout(timer)
-  }, [copied])
-  return (
-    <button
-      type="button"
-      className={`min-h-9 shrink-0 cursor-pointer rounded-full bg-accent px-4 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 active:opacity-80 ${className}`}
-      onClick={() => {
-        navigator.clipboard.writeText(text).then(
-          () => setCopied(true),
-          () => {},
-        )
-      }}
-    >
-      <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
     </button>
   )
 }
