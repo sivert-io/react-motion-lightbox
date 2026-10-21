@@ -21,8 +21,16 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
  * raising SLOW slows everything evenly, springs included.
  */
 export const SLOW = 1.2;
-export const STORY_FRAMES = 1110;
-const useFrame = () => useCurrentFrame() / SLOW;
+/**
+ * The focus scene gets HOLD more story frames from HOLD_AT on: everything
+ * else stands still while the square moves round the car (see `useRawFrame`).
+ */
+const HOLD_AT = 590;
+const HOLD = 48;
+export const STORY_FRAMES = 1110 + HOLD;
+const useRawFrame = () => useCurrentFrame() / SLOW;
+const warp = (raw: number) => (raw < HOLD_AT ? raw : raw < HOLD_AT + HOLD ? HOLD_AT : raw - HOLD);
+const useFrame = () => warp(useRawFrame());
 /** 0 before `from`, 1 after `from + dur` story frames, eased in between. */
 const ease = (frame: number, from: number, dur: number, easing = OUT) =>
   interpolate(frame, [from, from + dur], [0, 1], { ...clamp, easing });
@@ -37,15 +45,15 @@ const DEER: Photo = { id: "4sVimJidmpQ", w: 4671, h: 7006, focus: [0.5, 0.46], z
 const RED: Photo = { id: "cA6DjKN2vaw", w: 3034, h: 4040, focus: [0.42, 0.38], zoom: 1.5 };
 const CHAIR: Photo = { id: "41lvjsoCJKA", w: 2267, h: 3400, focus: [0.35, 0.5], zoom: 1.2 };
 const STREET: Photo = { id: "dmf546pckjQ", w: 4000, h: 6000, focus: [0.55, 0.3], zoom: 1.5 };
-const CLIFF: Photo = { id: "cKBsq-5U17A", w: 3358, h: 2239 };
-const HARBOUR: Photo = { id: "25Bu6uO9xLw", w: 6000, h: 4000 };
-const TROLL: Photo = { id: "ILYVeUgPkmI", w: 4928, h: 3264 };
+const CAR: Photo = { id: "28RaDBx9F3g", w: 5892, h: 3939, focus: [0.46, 0.6] };
+const HALLSTATT: Photo = { id: "q2dUSl9S4Xg", w: 6691, h: 4281 };
+const VERNAZZA: Photo = { id: "cYrMQA7a3Wc", w: 2400, h: 1600 };
 /** Out and About, on the gallery's track. */
 const ALBUM = [PIGEON, DEER, RED, CHAIR, STREET];
 /** The whole of Out and About, for the grid it folds out of. */
 const GRID = ["dmf546pckjQ", "B4H-44aAzqc", "2echtVPwylU", "wIZpOCdTb8I", "cA6DjKN2vaw", "FyVM48yP-S4", "4sVimJidmpQ", "nV1HMjvlOj4", "41lvjsoCJKA"];
-/** Norway, for the full-screen lightbox's thumbnail row. */
-const NORWAY = ["cKBsq-5U17A", "25Bu6uO9xLw", "ILYVeUgPkmI", "ut7XZMquCoU", "QMtI1dZ6KJM", "N9vsB6OEeKM"];
+/** For the full-screen lightbox's thumbnail row. */
+const FURTHER = ["28RaDBx9F3g", "q2dUSl9S4Xg", "cYrMQA7a3Wc", "xUUZcpQlqpM", "NwmR1EDtiFg", "uqG-p4lBxwk"];
 const big = (p: Photo) => staticFile(`photos/${p.id}-2560.webp`);
 const thumb = (id: string) => staticFile(`photos/${id}-thumb.webp`);
 const WHOLE: Crop = [0, 0, 1, 1];
@@ -132,7 +140,7 @@ const Finger = ({ x, y, down, o, size = 64 }: { x: number; y: number; down: numb
  * box. At 0 they run past it, fading with distance by `fade` (1) or staying
  * in full view (0), as `clip={false}` and `fade={false}` do.
  */
-const Strip = ({ box, pos, album = ALBUM, peek = 0, gap = 32, clip = 1, fade = 1, radius = 24 }: { box: Rect; pos: number; album?: Photo[]; peek?: number; gap?: number; clip?: number; fade?: number; radius?: number }) => {
+const Strip = ({ box, pos, album = ALBUM, peek = 0, gap = 32, clip = 1, fade = 1, radius = 24, hide }: { box: Rect; pos: number; album?: Photo[]; peek?: number; gap?: number; clip?: number; fade?: number; radius?: number; hide?: number }) => {
   const w = box.w - peek;
   const step = w + gap;
   const out = lerp(0, 1600, 1 - clip);
@@ -141,7 +149,7 @@ const Strip = ({ box, pos, album = ALBUM, peek = 0, gap = 32, clip = 1, fade = 1
       {album.map((photo, i) => {
         const d = i - pos;
         if (Math.abs(d) > 3.5) return null;
-        const o = lerp(1, Math.max(0, 1 - Math.abs(d) * 0.55), (1 - clip) * fade);
+        const o = i === hide ? 0 : lerp(1, Math.max(0, 1 - Math.abs(d) * 0.55), (1 - clip) * fade);
         return <Shot key={photo.id} photo={photo} rect={{ x: d * step, y: 0, w, h: box.h }} crop={cropOf(photo, w / box.h)} radius={radius} style={{ opacity: o }} />;
       })}
     </div>
@@ -158,7 +166,7 @@ const flick = (frame: number, fps: number, from: number, to: number, start: numb
 };
 
 // ── The film ─────────────────────────────────────────────────────────────────
-// Story frames, 30 to a second before SLOW. Title 0-40, the grid folds
+// Story frames, 30 to a second before SLOW (and before the HOLD). Title 0-40, the grid folds
 // 40-118, drag 118-210, shapes 210-300, peek 300-362, overflow 362-462, the
 // focus point 462-618, the full-screen lightbox 618-806, the phone 800-1052,
 // the end 1048-1110.
@@ -209,21 +217,26 @@ export const Trailer: React.FC = () => {
   if (frame >= 210) pos = 2 + g(318) + g(340) - g(372) - g(402) - g(432);
   const box: Rect = frame < 210 ? CENTRE : mix({ x: 960 - shapeW / 2, y: 590 - shapeH / 2, w: shapeW, h: shapeH }, CENTRE, reset);
 
-  // ── The focus point. The track moves on to the cliff photo; the square
-  // opens out into the whole photo with the square drawn where it was, the
-  // live result slides out beside it, the square zooms in and then moves so
-  // the man stands on a golden-ratio point. Then it folds back.
+  // ── The focus point. The track moves on to the car; the square opens out
+  // into the whole photo with the square drawn where it was, the live result
+  // slides out beside it, the square zooms in, and then visits the front, a
+  // wheel and the rear wing in turn. Then it folds back.
   const toCliff = ease(frame, 466, 18, GLIDE);
   const expand = ease(frame, 490, 26);
   const liveOut = ease(frame, 504, 18);
   const zoomIn = ease(frame, 528, 22, GLIDE);
   const moveTo = ease(frame, 560, 24, GLIDE);
   const collapse = ease(frame, 596, 22);
-  const focus: [number, number] = [lerp(0.5, 0.31, moveTo), lerp(0.5, 0.41, moveTo)];
-  const zoom = lerp(1, 2.2, zoomIn);
-  const live = cropOf({ ...CLIFF, focus, zoom });
-  const start = cropOf(CLIFF);
-  const WIDE = fit(CLIFF, 1000, 660, 600, 600);
+  const raw = useRawFrame();
+  const toWheel = ease(raw, HOLD_AT + 4, 18, GLIDE);
+  const toWing = ease(raw, HOLD_AT + 28, 18, GLIDE);
+  const SPOTS: [number, number][] = [[0.46, 0.6], [0.6, 0.58], [0.43, 0.67], [0.25, 0.52]];
+  const visit = (i: number) => lerp(lerp(lerp(SPOTS[0][i], SPOTS[1][i], moveTo), SPOTS[2][i], toWheel), SPOTS[3][i], toWing);
+  const focus: [number, number] = [visit(0), visit(1)];
+  const zoom = lerp(1, 2.6, zoomIn);
+  const live = cropOf({ ...CAR, focus, zoom });
+  const start = cropOf(CAR);
+  const WIDE = fit(CAR, 1000, 660, 600, 600);
   const cliffBox = mix(mix(CENTRE, WIDE, expand), CENTRE, collapse);
   const cliffCrop = mixCrop(mixCrop(start, WHOLE, expand), live, collapse);
   const LIVE: Rect = { x: 1250, y: 370, w: 460, h: 460 };
@@ -238,14 +251,14 @@ export const Trailer: React.FC = () => {
   const close = ease(frame, 766, 30);
   const squareOut = ease(frame, 798, 8, GLIDE);
   const STAGE = (p: Photo) => fit(p, 1600, 700, 960, 505);
-  const LB = [CLIFF, HARBOUR, TROLL];
+  const LB = [CAR, HALLSTATT, VERNAZZA];
   // Each photo's distance along the track from the first, a gap apart.
   const lbX = (i: number) => LB.slice(0, i).reduce((x, p, k) => x + STAGE(p).w / 2 + 48 + STAGE(LB[k + 1]).w / 2, 0);
   const along = -lerp(lerp(lbX(0), lbX(1), Math.min(lbAt, 1)), lbX(2), Math.max(0, lbAt - 1));
   const rowW = 6 * 84 + 5 * 16;
   const at = Math.round(lbAt);
-  const credit = ["Robert Bye", "Danny Rienecker", "Dong Zhang"][at];
-  const caption = ["Man standing on a cliff over a river", "Nusfjord, a fishing village in Lofoten", "Trolltunga"][at];
+  const credit = ["Isak Pettersson", "Sheng L", "Anders Jildén"][at];
+  const caption = ["A white sports car in front of a building", "Hallstatt reflected in the lake", "Vernazza, a village on the Italian coast"][at];
 
   // ── The phone: swipes in small mode, a tap opens the deer full screen, a
   // swipe there, and the close button puts it back in its square.
@@ -260,7 +273,7 @@ export const Trailer: React.FC = () => {
   const pNext = ease(frame, 966, 22, GLIDE); // deer to red, full screen
   const pClose = ease(frame, 1006, 28);
   // The gallery behind followed the lightbox, so it's on the red one now.
-  const pPos = frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 1006 ? p3.pos : 2;
+  const pPos = frame < 862 ? p1.pos : frame < 888 ? p2.pos : frame < 966 ? p3.pos : 1 + pNext;
   const pInBox = frame >= 920 && frame < 1034;
   const PHONE_STAGE = (p: Photo) => fit(p, 400, 600, 220, 430);
   const slideRect: Rect = { x: 32, y: 200, w: 330, h: 380 };
@@ -318,7 +331,7 @@ export const Trailer: React.FC = () => {
           <Strip
             box={box}
             // On to the cliff photo along the same track, before it opens out.
-            album={frame >= 462 ? [PIGEON, DEER, CLIFF] : ALBUM}
+            album={frame >= 462 ? [PIGEON, DEER, CAR] : ALBUM}
             pos={frame >= 462 ? 1 + toCliff : pos}
             peek={110 * peekIn * (1 - reset)}
             clip={1 - unclip * (1 - reset)}
@@ -335,8 +348,8 @@ export const Trailer: React.FC = () => {
       <Caption text="Point it at what matters." at={470} until={612} />
       {frame >= 486 && frame < 632 && (
         <>
-          <Shot photo={CLIFF} rect={liveRect} crop={live} style={{ opacity: liveOut * (1 - collapse) }} />
-          <Shot photo={CLIFF} rect={cliffBox} crop={cliffCrop} />
+          <Shot photo={CAR} rect={liveRect} crop={live} style={{ opacity: liveOut * (1 - collapse) }} />
+          <Shot photo={CAR} rect={cliffBox} crop={cliffCrop} />
           {/* Where the square is on the whole photo, the rest dimmed, and the dot. */}
           <div style={{ position: "absolute", left: cliffBox.x, top: cliffBox.y, width: cliffBox.w, height: cliffBox.h, borderRadius: 24, overflow: "hidden", opacity: ease(frame, 508, 10) * (1 - ease(frame, 594, 6)) }}>
             <div style={{ position: "absolute", left: live[0] * cliffBox.w, top: live[1] * cliffBox.h, width: live[2] * cliffBox.w, height: live[3] * cliffBox.h, border: "4px solid white", borderRadius: 14, boxShadow: "0 0 0 3000px oklch(15% 0.02 25 / 0.5)" }} />
@@ -359,7 +372,7 @@ export const Trailer: React.FC = () => {
             if (d > 1.2) return null;
             const centred = shift(STAGE(p), lbX(i) + along);
             const rect = i === 0 ? shift(mix(CENTRE, STAGE(p), open), along) : i === 2 ? mix(centred, CENTRE, close) : centred;
-            const crop = i === 0 ? mixCrop(live, WHOLE, open) : i === 2 ? mixCrop(WHOLE, cropOf(TROLL), close) : WHOLE;
+            const crop = i === 0 ? mixCrop(live, WHOLE, open) : i === 2 ? mixCrop(WHOLE, cropOf(VERNAZZA), close) : WHOLE;
             return <Shot key={p.id} photo={p} rect={rect} crop={crop} style={{ opacity: Math.max(0, 1 - d) * (i === 2 ? 1 - squareOut : 1) }} />;
           })}
           <div style={{ opacity: chrome }}>
@@ -372,10 +385,10 @@ export const Trailer: React.FC = () => {
             ))}
             <div style={{ position: "absolute", left: 0, right: 0, top: 878, textAlign: "center", font: `28px ${SANS}`, color: MUTED }}>
               {caption}
-              <span style={{ marginLeft: 28 }}>{`${at + 1} / 9`}</span>
+              <span style={{ marginLeft: 28 }}>{`${at + 1} / 6`}</span>
             </div>
             <div style={{ position: "absolute", left: 960 - rowW / 2, top: 950, display: "flex", gap: 16 }}>
-              {NORWAY.map((id, i) => {
+              {FURTHER.map((id, i) => {
                 const lit = Math.max(0, 1 - Math.abs(i - lbAt));
                 return <Img key={id} src={thumb(id)} style={{ width: 84, height: 84, borderRadius: 12, objectFit: "cover", opacity: 0.45 + 0.55 * lit, scale: String(1 + 0.1 * lit) }} />;
               })}
@@ -405,10 +418,9 @@ export const Trailer: React.FC = () => {
       >
         <div style={{ position: "absolute", left: 32, top: 70, font: `40px ${SERIF}`, color: INK }}>Out and about</div>
         <div style={{ position: "absolute", left: 32, top: 126, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Streets, people, deer, and one very good chair.</div>
-        {/* The square that opened is the lightbox's while it's open. */}
-        <div style={{ opacity: pInBox ? 0 : 1 }}>
-          <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} pos={pPos} peek={50} gap={14} radius={20} />
-        </div>
+        {/* The gallery stays behind the lightbox and follows it. Only the
+            open photo is hidden: the lightbox's copy is that one. */}
+        <Strip box={{ x: 32, y: 200, w: 380, h: 380 }} pos={pPos} peek={50} gap={14} radius={20} hide={pInBox ? (pNext > 0.5 ? 2 : 1) : undefined} />
         <div style={{ position: "absolute", left: 32, top: 600, font: `19px ${SANS}`, color: MUTED }}>{`${Math.round(pPos) + 1} / 9`}</div>
         <div style={{ position: "absolute", left: 32, top: 660, font: `40px ${SERIF}`, color: INK }}>Norway</div>
         <div style={{ position: "absolute", left: 32, top: 716, width: 380, font: `19px/1.4 ${SANS}`, color: MUTED }}>Fjords, fishing villages and a lot of standing on rocks.</div>
