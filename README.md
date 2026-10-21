@@ -4,6 +4,8 @@ A lightbox for React. It opens out of the thumbnail you clicked and closes back 
 
 I built it for my own site, [gullberg.no](https://gullberg.no), and pulled it out into a package so [Gryt](https://gryt.chat) can use it too.
 
+Try it at [lightbox.gullberg.no](https://lightbox.gullberg.no).
+
 ![The lightbox open on a gallery of eight screenshots, with the thumbnail row underneath](docs/open.webp)
 
 ![Halfway through a move to the next picture: the current one slides out to the left while the next comes in from the right](docs/slide.webp)
