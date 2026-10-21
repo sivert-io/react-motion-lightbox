@@ -9,3 +9,4 @@ demo/test-results
 demo/playwright-report
 *.tgz
 .DS_Store
+trailer
