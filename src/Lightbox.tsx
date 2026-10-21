@@ -503,9 +503,10 @@ function View<T extends LightboxItem>({
     if (pinch.current || zoomed()) return
     track.panEnd(velocity.x)
   }
-  // A click, not the end of a drag: the left half goes back, the right half
-  // on. Two in quick succession zoom instead, so a single one waits 260ms to be
-  // sure it is single. Zoomed in, a single one does nothing.
+  // A click, not the end of a drag. On the picture: the left half goes back,
+  // the right half on. Beside it, in the empty space: closes. Two in quick
+  // succession zoom instead, so a single one waits 260ms to be sure it is
+  // single. Zoomed in, a single one does nothing.
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(tapTimer.current), [])
@@ -523,7 +524,13 @@ function View<T extends LightboxItem>({
       return
     }
     lastTap.current = { t: now, x: event.clientX, y: event.clientY }
-    if (!many || zoomed()) return
+    if (zoomed()) return
+    const pic = frame.current?.getBoundingClientRect()
+    if (pic && (event.clientX < pic.left || event.clientX > pic.right || event.clientY < pic.top || event.clientY > pic.bottom)) {
+      onClose()
+      return
+    }
+    if (!many) return
     const rect = event.currentTarget.getBoundingClientRect()
     const step = event.clientX < rect.left + rect.width / 2 ? -1 : 1
     clearTimeout(tapTimer.current)
@@ -586,6 +593,12 @@ function View<T extends LightboxItem>({
       aria-label={labels.dialog}
       aria-modal="true"
       data-leaving={leaving || undefined}
+      // The empty space around the stage and the bars closes it too. Not at the
+      // end of a drag, whose click lands on whatever it was let go over.
+      onPointerDown={() => (panned.current = false)}
+      onClick={(event) => {
+        if (!panned.current && (event.target as Element).matches('.rml, .rml-stage, .rml-chrome, .rml-title, .rml-toolbar')) onClose()
+      }}
       onCancel={(event) => {
         event.preventDefault()
         onClose()

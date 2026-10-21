@@ -16,6 +16,7 @@ Try it at [lightbox.gullberg.no](https://lightbox.gullberg.no).
 - You can drag the pictures, flick them, and grab one while it's still moving.
 - Zoom with a double click or tap, the scroll wheel, two fingers, or `+` and `-`. It goes up to 8x.
 - Esc and the arrow keys work, and so does swiping. While zoomed in, the arrow keys move around the picture.
+- Click the empty space around the picture to close it. Clicking the picture itself goes to the previous or next one, depending on which half you click.
 - It's a native `<dialog>`, so focus stays inside while it's open. When it closes, focus goes back to where it was.
 - It loads the next and previous picture before you get there.
 - With reduced motion turned on, nothing slides. It switches straight away.
