@@ -732,12 +732,14 @@ function Picture<T extends LightboxItem>({
   renderVideo?: (item: T, state: { active: boolean }) => ReactNode
   current?: boolean
 }) {
-  const { place, opacity } = useTrackPlace(x, at, reach)
-  const shift = useTransform(() => x.get() + place.get() + (zoom ? zoom.x.get() : 0))
+  const { left, opacity } = useTrackPlace(x, at, reach)
+  // Only the current picture zooms. The others take `left` as it is: a value
+  // derived on mount would miss a move made in the same commit.
+  const shift = useTransform(() => left.get() + (zoom ? zoom.x.get() : 0))
   const lift = useTransform(() => (zoom ? zoom.y.get() : 0))
   const scale = useTransform(() => (zoom ? zoom.s.get() : 1))
   // `--rml-r` is the frame's, scaled during the move into and out of the thumbnail.
-  const style = { ...size, x: shift, y: lift, scale, opacity, borderRadius: `var(--rml-r, ${radius}px)` }
+  const style = { ...size, x: zoom ? shift : left, y: lift, scale, opacity, borderRadius: `var(--rml-r, ${radius}px)` }
 
   if (item.kind === 'image') {
     return (

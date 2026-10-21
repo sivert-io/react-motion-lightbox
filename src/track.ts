@@ -3,7 +3,6 @@ import {
   animate,
   motionValue,
   useMotionValue,
-  useTransform,
   type AnimationPlaybackControls,
   type MotionValue,
 } from 'motion/react'
@@ -240,28 +239,34 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
 }
 
 /**
- * One picture's place on the track, `at` pixels along it, and how visible it
- * is there: fully in the middle, gone by the time it is a whole step away. The
+ * One picture's place on the track, `at` pixels along it: where it is on
+ * screen (`left`, the track's position plus its place) and how visible it is
+ * there: fully in the middle, gone by the time it is a whole step away. The
  * current one fades as it leaves (`reach` is how far a step is on each side),
  * a neighbour as far as it starts from.
  *
- * The place is a motion value of its own, updated before the paint that
- * follows a render. Read from a closure, a drag moving on a picture painted
- * one frame with the new track position and the old places, and the
- * neighbours flashed across the screen.
+ * Both are set straight from `x`'s change events, before the paint that
+ * follows a render. Derived with `useTransform`, a picture that joined the
+ * track during a move kept the position it was mounted at: the track moved
+ * on, and the new neighbour sat on top of the current picture.
  */
 export function useTrackPlace(x: MotionValue<number>, at: number, reach?: [number, number]) {
   const place = useMotionValue(at)
+  const left = useMotionValue(x.get() + at)
+  const opacity = useMotionValue(1)
   const steps = useRef(reach)
-  useLayoutEffect(() => {
-    place.set(at)
-    steps.current = reach
-  })
-  const opacity = useTransform(() => {
+  const [update] = useState(() => () => {
     const pos = x.get() + place.get()
     const r = steps.current
     const step = r ? (pos < 0 ? r[0] : r[1]) : Math.abs(place.get())
-    return step ? Math.max(0, 1 - Math.abs(pos) / step) : 1
+    left.set(pos)
+    opacity.set(step ? Math.max(0, 1 - Math.abs(pos) / step) : 1)
   })
-  return { place, opacity }
+  useLayoutEffect(() => {
+    place.set(at)
+    steps.current = reach
+    update()
+  })
+  useLayoutEffect(() => x.on('change', update), [x, update])
+  return { place, left, opacity }
 }

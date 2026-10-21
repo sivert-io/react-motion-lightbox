@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { motion, useTransform, type MotionValue } from 'motion/react'
+import { motion, type MotionValue } from 'motion/react'
 import { GAP, Lightbox, preload, useTrack, useTrackPlace, type Crop } from 'react-motion-lightbox'
 import 'react-motion-lightbox/styles.css'
 import type { Photo } from './photos'
@@ -126,8 +126,7 @@ function Slide({
 }) {
   // No fade: the square clips the photos sliding out. Without the clip, put
   // `opacity` from useTrackPlace on the slide so they fade out instead.
-  const { place } = useTrackPlace(x, at)
-  const left = useTransform(() => x.get() + place.get())
+  const { left } = useTrackPlace(x, at)
   const current = at === 0
   // The whole photo, moved and scaled so the square shows just its crop.
   const [cx, cy, cw, ch] = square(photo)
