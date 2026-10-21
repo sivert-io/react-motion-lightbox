@@ -1,6 +1,6 @@
 {
   "name": "react-motion-lightbox",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A React lightbox that opens out of its thumbnail: a draggable track, pinch, wheel and double-tap zoom, and slots for your own video player, toolbar and title. Built on Motion.",
   "license": "MIT",
   "author": "Sivert Gullberg Hansen <sivertgullberg@gmail.com>",
