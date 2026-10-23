@@ -116,7 +116,7 @@ export function Gallery<T extends LightboxItem>({
   const slideWidth = width - peek
   const step = slideWidth + gap
   const track = useTrack(n, 0, () => [step, step])
-  const { index, prev, next, many, x, go } = track
+  const { index, many, x, go } = track
   const shown = useRef(index)
   useEffect(() => {
     if (index === shown.current) return
@@ -197,24 +197,16 @@ export function Gallery<T extends LightboxItem>({
           onPanEnd={(_, info) => track.panEnd(info.velocity.x)}
         >
           {width > 0 &&
-            [
-              // Keyed by item, so the one moving into the middle stays the same element.
-              ...(many && prev !== next ? [{ i: prev, at: -step }] : []),
-              { i: index, at: 0 },
-              ...(many ? [{ i: next, at: step }] : []),
+            slots(index, n, [
+              ...(many ? [1, -1] : []),
               // With a peek, the one after next shows at the edge as the next
               // one slides in, so it has to be there before the move ends.
-              ...(peek > 0 && n > 3 ? [{ i: (next + 1) % n, at: 2 * step }] : []),
+              ...(many && (peek > 0 || (!clip && !fade)) ? [2] : []),
               // Shown in full on either side, two more each way are in sight.
-              ...(!clip && !fade && n > 5
-                ? [
-                    { i: (prev - 1 + n) % n, at: -2 * step },
-                    ...(peek > 0 ? [] : [{ i: (next + 1) % n, at: 2 * step }]),
-                  ]
-                : []),
-            ].map(({ i, at }) => (
+              ...(many && !clip && !fade ? [-2] : []),
+            ]).map(({ i, offset, key }) => (
               <Slide
-                key={i}
+                key={key}
                 item={items[i]}
                 index={i}
                 label={items[i].alt || `${i + 1} / ${n}`}
@@ -223,12 +215,12 @@ export function Gallery<T extends LightboxItem>({
                 natural={natural(items[i])}
                 width={slideWidth}
                 x={x}
-                at={at}
+                at={offset * step}
                 step={step}
                 radius={radius}
                 fade={!clip && fade}
                 show={near}
-                video={renderVideo && items[i].kind === 'video' ? renderVideo(items[i], { active: at === 0 }) : undefined}
+                video={renderVideo && items[i].kind === 'video' ? renderVideo(items[i], { active: offset === 0 }) : undefined}
                 onOpen={() => {
                   if (dragged.current) return
                   track.jump(i)
@@ -293,6 +285,22 @@ export function Gallery<T extends LightboxItem>({
       />
     </div>
   )
+}
+
+/**
+ * The current item and the places `offsets` steps either side of it. With few
+ * items two places can show the same one, so later ones are copies with keys
+ * of their own. Current and next come first and keep the item's key, so the
+ * one sliding into the middle stays the same element.
+ */
+function slots(index: number, n: number, offsets: number[]) {
+  const seen = new Set<number>()
+  return [0, ...offsets].map((offset) => {
+    const i = (((index + offset) % n) + n) % n
+    const key = seen.has(i) ? `${i}:${offset}` : String(i)
+    seen.add(i)
+    return { i, offset, key }
+  })
 }
 
 /** One picture in the box: the whole of it, moved and scaled so the box shows just its crop, or fitted inside. */
