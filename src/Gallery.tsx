@@ -55,6 +55,12 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
   /** Called with the picture's index on a click, instead of opening the lightbox: for an app with a viewer of its own. */
   onPress?: (index: number) => void
   /**
+   * Draw what's in a slide yourself, in place of its picture: for an app that
+   * loads pictures its own way or puts a menu on them. It fills the slide,
+   * which is still the button that opens the lightbox or calls `onPress`.
+   */
+  renderSlide?: (item: T, index: number) => ReactNode
+  /**
    * The lightbox opened, started closing, or finished closing and is gone:
    * for moving things on the page out of its way.
    */
@@ -79,6 +85,7 @@ export function Gallery<T extends LightboxItem>({
   gap = GAP,
   onPress,
   onLightboxChange,
+  renderSlide,
   ...props
 }: GalleryProps<T>) {
   const { items, caption, className, onIndexChange, renderVideo, radius = 12 } = props
@@ -220,7 +227,13 @@ export function Gallery<T extends LightboxItem>({
                 radius={radius}
                 fade={!clip && fade}
                 show={near}
-                video={renderVideo && items[i].kind === 'video' ? renderVideo(items[i], { active: offset === 0 }) : undefined}
+                content={
+                  renderSlide
+                    ? renderSlide(items[i], i)
+                    : renderVideo && items[i].kind === 'video'
+                      ? renderVideo(items[i], { active: offset === 0 })
+                      : undefined
+                }
                 onOpen={() => {
                   if (dragged.current) return
                   track.jump(i)
@@ -318,7 +331,7 @@ function Slide({
   radius,
   fade,
   show,
-  video,
+  content,
   onOpen,
 }: {
   item: LightboxItem
@@ -337,8 +350,8 @@ function Slide({
   fade: boolean
   /** Whether to load the picture yet. */
   show: boolean
-  /** A video drawn by the app's own player, in place of its poster. */
-  video?: ReactNode
+  /** Drawn by the app in place of the picture: its own slide, or its own video player. */
+  content?: ReactNode
   onOpen: () => void
 }) {
   const place = useTrackPlace(x, at, [step, step])
@@ -357,8 +370,8 @@ function Slide({
       onPointerEnter={() => void preload(item)}
       onFocus={() => void preload(item)}
     >
-      {show && video ? (
-        <span className="rml-gallery-video">{video}</span>
+      {show && content ? (
+        <span className="rml-gallery-video">{content}</span>
       ) : show ? (
         <img
           src={item.kind === 'image' ? item.src : item.poster}

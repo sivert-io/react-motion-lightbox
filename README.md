@@ -128,6 +128,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `gap` | The space between pictures, in pixels. Default `48`. |
 | `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
+| `renderSlide(item, index)` | Draw what's in a slide yourself, in place of its picture: if your app loads pictures its own way or puts a menu on them. The slide stays the button that opens the lightbox or calls `onPress`. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 | `fade` | With `clip={false}`, whether pictures fade as they leave the box. Default `true`. Set it to `false` and they stay fully visible on either side, like a carousel. Whatever the gallery sits in decides how far out they show. |
 
