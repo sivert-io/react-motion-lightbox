@@ -138,7 +138,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 
 | Prop | |
 |---|---|
-| `items` | `{ kind: 'image' \| 'video', src, srcSet?, sizes?, alt?, width?, height?, poster?, thumb?, focus?, zoom? }[]`. If you leave out `width` and `height`, it measures the item once it loads. |
+| `items` | `{ kind: 'image' \| 'video', src, srcSet?, sizes?, alt?, width?, height?, poster?, thumb?, focus?, zoom? }[]`. If you leave out `width` and `height`, it measures the item once it loads. The lightbox shows each item at most at this size, so a small picture isn't blown up. |
 | `index`, `open` | Which item to show, and whether the lightbox is open. Change `index` while it's open and it moves there. |
 | `onClose` | Someone pressed Esc or the close button. Set `open` to `false` and it animates out. |
 | `onIndexChange(index)` | The item on screen changed. |

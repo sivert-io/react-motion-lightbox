@@ -31,7 +31,7 @@ export interface LightboxItem {
   srcSet?: string
   sizes?: string
   alt?: string
-  /** Intrinsic size. Without it the item is measured once it loads. */
+  /** Intrinsic size. The lightbox never draws it larger. Without it the item is measured once it loads. */
   width?: number
   height?: number
   /** A video's still. */
@@ -353,9 +353,10 @@ function View<T extends LightboxItem>({
 
   // Each item as large as fits the stage, in whole pixels: a fractional edge,
   // centred with `translate: -50%`, lands between pixels and leaves a seam.
+  // Never past its own size, though: a small picture blown up is a blurry one.
   const sizeOf = (it: LightboxItem) => {
     const { width, height } = natural(it)
-    const w = Math.round(Math.min(box.width, box.height * (width / height)))
+    const w = Math.round(Math.min(box.width, box.height * (width / height), width))
     return { width: w, height: Math.round(w / (width / height)) }
   }
   const track = useTrack(n, start, (i) => {
