@@ -7,7 +7,9 @@ test('clicking the photo moves the focus, in the code and the square', async ({ 
   const box = (await picker.boundingBox())!
   const square = page.locator('.picker').locator('xpath=ancestor::li').locator('.rml-gallery-slide:not([aria-hidden]) img')
   const before = await square.getAttribute('style')
-  await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.5)
+  // Relative to the picker, found at click time: in CI the lazy photos above
+  // load after the scroll and push it down, so page coordinates missed it.
+  await picker.click({ position: { x: box.width * 0.75, y: box.height * 0.5 } })
   await expect(page.getByText('focus: [0.75, 0.5]')).toBeVisible()
   expect(await square.getAttribute('style')).not.toBe(before)
 })
