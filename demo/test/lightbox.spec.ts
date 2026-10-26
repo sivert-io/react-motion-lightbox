@@ -12,6 +12,13 @@ for (const hasTouch of [false, true]) {
   })
 }
 
+test('a picture is never drawn larger than its own size', async ({ page }) => {
+  await page.goto('/test/one.html?small')
+  const img = page.locator('.rml-view img')
+  await expect(img).toBeVisible()
+  expect((await img.boundingBox())!.width).toBeLessThanOrEqual(400)
+})
+
 test('the close button has a tooltip from its label', async ({ page }) => {
   await page.goto('/test/one.html')
   await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('title', 'Close')
