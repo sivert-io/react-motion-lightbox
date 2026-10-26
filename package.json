@@ -1,6 +1,6 @@
 {
   "name": "react-motion-lightbox",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "A React lightbox and image gallery that opens out of the photo you click and closes back into it: swipe, pinch and wheel zoom, thumbnails, video, focus-point crops. Built on Motion.",
   "license": "MIT",
   "author": "Sivert Gullberg Hansen <sivertgullberg@gmail.com>",
