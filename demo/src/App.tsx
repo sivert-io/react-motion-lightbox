@@ -30,7 +30,7 @@ export function App() {
         <h1 className="text-4xl sm:text-5xl">A lightbox that opens out of the photo you click.</h1>
         <p className="mt-5 text-lg text-muted">
           Each album below is a small version of it. Swipe through one, then click the photo to open it full size.
-          Zoom with a double-click or the scroll wheel, and press Esc to go back into the square.
+          Click the photo or use the scroll wheel to zoom, and press Esc to go back into the square.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Copyable text={INSTALL} />

@@ -36,7 +36,7 @@ export function DragLesson({ n }: { n: number }) {
     >
       <p>
         Give <code>Gallery</code> your photos and it shows one at a time. Drag it, flick it, or grab it while it's still
-        moving. Click the photo and the big lightbox opens out of it, where you can zoom with a double-click or the scroll
+        moving. Click the photo and the big lightbox opens out of it, where you can zoom with a click or the scroll
         wheel.
       </p>
       <Code name="Gallery.tsx">{`import { Gallery } from 'react-motion-lightbox'

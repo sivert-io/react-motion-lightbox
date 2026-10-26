@@ -42,6 +42,26 @@ test('the wheel zooms the picture without scrolling the page', async ({ page }) 
   expect(scale).not.toBe('none')
 })
 
+test('a click on the picture zooms in there, and another zooms back out', async ({ page }) => {
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.scrollIntoViewIfNeeded()
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const view = page.locator('dialog.rml .rml-view')
+  await expect(view.locator('img').first()).toBeVisible()
+  await page.waitForTimeout(700)
+  const count = await page.locator('dialog.rml .rml-count').textContent()
+  const media = view.locator('.rml-media:not([aria-hidden])')
+  const box = (await media.boundingBox())!
+  await page.mouse.click(box.x + box.width * 0.75, box.y + box.height / 2)
+  await page.waitForTimeout(600)
+  expect(await media.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a)).toBeGreaterThan(2)
+  expect(await page.locator('dialog.rml .rml-count').textContent()).toBe(count)
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(600)
+  expect(await media.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a)).toBeCloseTo(1, 1)
+})
+
 // The frame's copy for wrapping round from the last thumbnail to the first
 // sat one row-length to the left, and since the frame was drawn outside the
 // thumbnail it poked into the first one: two frames at once (Gryt, 0.2.0).
