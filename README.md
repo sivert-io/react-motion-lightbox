@@ -33,11 +33,11 @@ https://github.com/user-attachments/assets/6dc8bf07-384d-446f-8ed4-877b0d18ccab
 
 - Opens out of the thumbnail when you tell it which one. Without one, it fades in.
 - You can drag the pictures, flick them, and grab one while it's still moving.
-- Zoom with a double click or tap, the scroll wheel, two fingers, or `+` and `-`. It goes up to 8x.
+- Zoom with a click or tap on the picture, the scroll wheel, two fingers, or `+` and `-`. A click zooms 2.5x around where you clicked, and another zooms back out. It goes up to 8x.
 - Esc and the arrow keys work, and so does swiping. While zoomed in, the arrow keys move around the picture.
 - Pull the picture down to close it. It follows your finger and the page shows through; let go far enough or fast enough and it goes back into its thumbnail from there.
 - Nothing responds while the picture is moving in or out.
-- Click the empty space around the picture to close it. Clicking the picture itself goes to the previous or next one, depending on which half you click.
+- Click the empty space around the picture to close it. Move on with the arrows, the arrow keys, a swipe or the thumbnails.
 - It's a native `<dialog>`, so focus stays inside while it's open. When it closes, focus goes back to where it was.
 - It loads the next and previous picture before you get there.
 - With reduced motion turned on, nothing slides. It switches straight away.

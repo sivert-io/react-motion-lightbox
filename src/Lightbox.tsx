@@ -611,41 +611,20 @@ function View<T extends LightboxItem>({
     const from = parseFloat(dialog.current?.style.getPropertyValue('--rml-p') || '1')
     void animate(from, 1, { ...spring, onUpdate: (p) => dialog.current?.style.setProperty('--rml-p', String(p)) })
   }
-  // A click, not the end of a drag. On the picture: the left half goes back,
-  // the right half on. Beside it, in the empty space: closes. Two in quick
-  // succession zoom instead, so a single one waits 260ms to be sure it is
-  // single. Zoomed in, a single one does nothing.
-  const lastTap = useRef<{ t: number; x: number; y: number } | null>(null)
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => () => clearTimeout(tapTimer.current), [])
+  // A click, not the end of a drag. On the picture: zooms in around the
+  // point, or back out if zoomed. Beside it, in the empty space: closes.
+  // Moving on is the arrows, the keys, a swipe or the thumbnails.
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     if (panned.current) {
       panned.current = false
       return
     }
-    const now = performance.now()
-    const last = lastTap.current
-    if (last && now - last.t < 300 && Math.hypot(event.clientX - last.x, event.clientY - last.y) < 40) {
-      clearTimeout(tapTimer.current)
-      lastTap.current = null
-      toggleZoom(event.clientX, event.clientY)
-      return
-    }
-    lastTap.current = { t: now, x: event.clientX, y: event.clientY }
-    if (zoomed()) return
     const pic = frame.current?.getBoundingClientRect()
-    if (pic && (event.clientX < pic.left || event.clientX > pic.right || event.clientY < pic.top || event.clientY > pic.bottom)) {
+    if (!zoomed() && pic && (event.clientX < pic.left || event.clientX > pic.right || event.clientY < pic.top || event.clientY > pic.bottom)) {
       onClose()
       return
     }
-    if (!many) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    const step = event.clientX < rect.left + rect.width / 2 ? -1 : 1
-    clearTimeout(tapTimer.current)
-    tapTimer.current = setTimeout(() => {
-      lastTap.current = null
-      go(step)
-    }, 260)
+    toggleZoom(event.clientX, event.clientY)
   }
 
   // ── Closing ─────────────────────────────────────────────────────────────────
