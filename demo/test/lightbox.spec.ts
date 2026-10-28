@@ -19,6 +19,17 @@ test('a picture is never drawn larger than its own size', async ({ page }) => {
   expect((await img.boundingBox())!.width).toBeLessThanOrEqual(400)
 })
 
+test('a picture that has not said its size yet opens stage-sized, not 16 px', async ({ page }) => {
+  await page.route('**/photos/**', async (route) => {
+    await new Promise((r) => setTimeout(r, 1500))
+    await route.continue()
+  })
+  await page.goto('/test/one.html?unsized')
+  const frame = page.locator('.rml-frame')
+  await expect(frame).toBeAttached()
+  expect((await frame.boundingBox())!.width).toBeGreaterThan(100)
+})
+
 test('the close button has a tooltip from its label', async ({ page }) => {
   await page.goto('/test/one.html')
   await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('title', 'Close')

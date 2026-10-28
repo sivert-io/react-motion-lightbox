@@ -261,7 +261,7 @@ export function useNaturalSizes(items: LightboxItem[]) {
     // Measures each item once; `sizes` is read only to skip known ones.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items])
-  return (it: LightboxItem) => (it.width && it.height ? { width: it.width, height: it.height } : (sizes[it.src] ?? { width: 16, height: 9 }))
+  return (it: LightboxItem) => (it.width && it.height ? { width: it.width, height: it.height, known: true } : sizes[it.src] ? { ...sizes[it.src], known: true } : { width: 16, height: 9, known: false })
 }
 
 // ── The component ───────────────────────────────────────────────────────────
@@ -355,8 +355,9 @@ function View<T extends LightboxItem>({
   // centred with `translate: -50%`, lands between pixels and leaves a seam.
   // Never past its own size, though: a small picture blown up is a blurry one.
   const sizeOf = (it: LightboxItem) => {
-    const { width, height } = natural(it)
-    const w = Math.round(Math.min(box.width, box.height * (width / height), width))
+    const { width, height, known } = natural(it)
+    // Capped only once the size is real: the 16:9 guess would draw a 16 px picture to open out of.
+    const w = Math.round(Math.min(box.width, box.height * (width / height), known ? width : Infinity))
     return { width: w, height: Math.round(w / (width / height)) }
   }
   const track = useTrack(n, start, (i) => {
