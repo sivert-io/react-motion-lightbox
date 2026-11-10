@@ -153,3 +153,19 @@ test('pulling the picture down closes it; a short pull springs back', async ({ p
   await page.mouse.up()
   await expect(page.locator('dialog.rml')).toHaveCount(0, { timeout: 3000 })
 })
+
+// A click on a video used to zoom it, like a picture (0.9.1).
+for (const variant of ['', '=controls']) {
+  test(`a click on a video${variant ? ' with native controls' : ''} pauses it once and doesn't zoom`, async ({ page }) => {
+    await page.goto(`/test/one.html?video${variant}`)
+    await expect(page.locator('dialog.rml')).not.toHaveAttribute('data-moving')
+    const video = page.locator('.rml-view video')
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime > 0)).toBe(true)
+    const box = (await video.boundingBox())!
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 3)
+    await page.waitForTimeout(400)
+    expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true)
+    const transform = await page.locator('.rml-media.rml-video').evaluate((el) => getComputedStyle(el).transform)
+    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform)
+  })
+}

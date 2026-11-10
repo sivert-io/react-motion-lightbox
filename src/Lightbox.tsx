@@ -612,8 +612,8 @@ function View<T extends LightboxItem>({
     const from = parseFloat(dialog.current?.style.getPropertyValue('--rml-p') || '1')
     void animate(from, 1, { ...spring, onUpdate: (p) => dialog.current?.style.setProperty('--rml-p', String(p)) })
   }
-  // A click, not the end of a drag. On the picture: zooms in around the
-  // point, or back out if zoomed. Beside it, in the empty space: closes.
+  // A click, not the end of a drag. On a picture: zooms in around the
+  // point, or back out if zoomed. On a video: plays or pauses. Beside it, in the empty space: closes.
   // Moving on is the arrows, the keys, a swipe or the thumbnails.
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     if (panned.current) {
@@ -623,6 +623,14 @@ function View<T extends LightboxItem>({
     const pic = frame.current?.getBoundingClientRect()
     if (!zoomed() && pic && (event.clientX < pic.left || event.clientX > pic.right || event.clientY < pic.top || event.clientY > pic.bottom)) {
       onClose()
+      return
+    }
+    // A video plays or pauses instead. Native controls, and anything clickable
+    // that renderVideo draws, handle their own clicks.
+    if (item.kind === 'video') {
+      if ((event.target as Element).closest('video[controls], button, a, input, select, [role="button"]')) return
+      const video = frame.current?.querySelector<HTMLVideoElement>('.rml-media:not([aria-hidden]) video')
+      if (video) video.paused ? void video.play() : video.pause()
       return
     }
     toggleZoom(event.clientX, event.clientY)
