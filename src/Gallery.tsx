@@ -52,6 +52,13 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
   peek?: number
   /** The space between pictures on the track, in pixels. Default 48. */
   gap?: number
+  /**
+   * `'box'`, the default, makes every slide the box's width. `'natural'` makes
+   * each one its picture's own width at the box's height (never wider than the
+   * box), so wide and tall pictures sit side by side at their own shapes with
+   * exactly `gap` between them. Most useful with `clip` and `fade` off.
+   */
+  slideWidth?: 'box' | 'natural'
   /** Called with the picture's index on a click, instead of opening the lightbox: for an app with a viewer of its own. */
   onPress?: (index: number) => void
   /**
@@ -83,6 +90,7 @@ export function Gallery<T extends LightboxItem>({
   fit = 'cover',
   peek = 0,
   gap = GAP,
+  slideWidth = 'box',
   onPress,
   onLightboxChange,
   renderSlide,
@@ -93,7 +101,6 @@ export function Gallery<T extends LightboxItem>({
   const icons = { ...DEFAULT_ICONS, ...props.icons }
   const n = items.length
   const natural = useNaturalSizes(items)
-  const crop = (i: number) => cropOf({ ...items[i], ...natural(items[i]) }, aspect)
   // Where the picture sits in its slide: a crop that fills it, or all of it, fitted.
   const contained = (i: number, slide: DOMRect) => {
     const { width: w, height: h } = natural(items[i])
@@ -118,11 +125,32 @@ export function Gallery<T extends LightboxItem>({
     return () => observer.disconnect()
   }, [near])
 
-  // Every picture is the same size, the box less the peek, so a neighbour is
-  // one picture and a gap away.
-  const slideWidth = width - peek
-  const step = slideWidth + gap
-  const track = useTrack(n, 0, () => [step, step])
+  // By default every picture is the same size, the box less the peek, so a
+  // neighbour is one picture and a gap away. With natural widths each is its
+  // picture's width at the box's height, and a neighbour is half of each and a
+  // gap away, the way the lightbox's track does it.
+  const boxWidth = width - peek
+  const height = boxWidth / aspect
+  const sized = slideWidth === 'natural'
+  const widthOf = (i: number) => {
+    const { width: w, height: h } = natural(items[i])
+    return sized ? Math.min(boxWidth, Math.round((height * w) / h)) : boxWidth
+  }
+  const aspectOf = (i: number) => (sized ? widthOf(i) / height : aspect)
+  const crop = (i: number) => cropOf({ ...items[i], ...natural(items[i]) }, aspectOf(i))
+  const offsets = (i: number): [number, number] => {
+    const w = widthOf(i) / 2 + gap
+    return [w + widthOf((i + 1) % n) / 2, w + widthOf((i - 1 + n) % n) / 2]
+  }
+  // How far the picture `k` places on from `i` sits from it. `k` can be a
+  // fraction, for the lightbox's track part way between two pictures.
+  const along = (i: number, k: number) => {
+    const dir = k < 0 ? -1 : 1
+    let [d, j, left] = [0, i, Math.abs(k)]
+    for (; left > 0; left -= 1, j = (j + dir + n) % n) d += offsets(j)[dir === 1 ? 0 : 1] * Math.min(1, left)
+    return dir * d
+  }
+  const track = useTrack(n, 0, offsets)
   const { index, many, x, go } = track
   const shown = useRef(index)
   useEffect(() => {
@@ -137,7 +165,7 @@ export function Gallery<T extends LightboxItem>({
   // track is, counted from where it opened, without wrapping. When the
   // lightbox lands, the gallery is put on its picture anyway, in case a jump
   // (a thumbnail far away, or reduced motion) went faster than it followed.
-  const follow = useRef<{ from: number; at: number } | null>(null)
+  const follow = useRef<{ start: number; from: number; at: number } | null>(null)
   const onPosition = (p: number) => {
     const f = follow.current
     if (!f) return
@@ -146,7 +174,7 @@ export function Gallery<T extends LightboxItem>({
     else if (step < -n / 2) step += n
     f.at = p
     f.from += step
-    track.pan(-f.from * (width - peek + gap))
+    track.pan(-along(f.start, f.from))
   }
 
   // Closing counts as open for the slideshow, which waits until the picture is back.
@@ -172,6 +200,13 @@ export function Gallery<T extends LightboxItem>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, held, open, index])
 
+  // Places 3 and on out in `dir`, while the one before them is still within two boxes.
+  const further = (dir: 1 | -1) => {
+    const ks: number[] = []
+    for (let k = 3; k < 8 && Math.abs(along(index, dir * (k - 1))) < 2 * width; k++) ks.push(dir * k)
+    return ks
+  }
+
   return (
     <div
       className={['rml-gallery', className].filter(Boolean).join(' ')}
@@ -194,7 +229,7 @@ export function Gallery<T extends LightboxItem>({
           ref={box}
           className="rml-gallery-box"
           data-clip={clip || undefined}
-          style={width ? { height: slideWidth / aspect } : { aspectRatio: aspect }}
+          style={width ? { height } : { aspectRatio: aspect }}
           onPointerDown={() => (dragged.current = false)}
           onPanStart={track.panStart}
           onPan={(_, info) => {
@@ -211,6 +246,8 @@ export function Gallery<T extends LightboxItem>({
               ...(many && (peek > 0 || (!clip && !fade)) ? [2] : []),
               // Shown in full on either side, two more each way are in sight.
               ...(many && !clip && !fade ? [-2] : []),
+              // Narrow pictures leave room for more: as many as reach two boxes out.
+              ...(many && !clip && !fade && sized ? [...further(1), ...further(-1)] : []),
             ]).map(({ i, offset, key }) => (
               <Slide
                 key={key}
@@ -218,12 +255,13 @@ export function Gallery<T extends LightboxItem>({
                 index={i}
                 label={items[i].alt || `${i + 1} / ${n}`}
                 crop={fit === 'cover' ? crop(i) : undefined}
-                ratio={aspect}
+                ratio={aspectOf(i)}
                 natural={natural(items[i])}
-                width={slideWidth}
+                width={widthOf(i)}
+                left={(boxWidth - widthOf(i)) / 2}
                 x={x}
-                at={offset * step}
-                step={step}
+                at={along(index, offset)}
+                reach={offsets(i)}
                 radius={radius}
                 fade={!clip && fade}
                 show={near}
@@ -239,7 +277,7 @@ export function Gallery<T extends LightboxItem>({
                   track.jump(i)
                   if (onPress) return onPress(i)
                   track.panStart()
-                  follow.current = { from: 0, at: i }
+                  follow.current = { start: i, from: 0, at: i }
                   setLightbox('open')
                 }}
               />
@@ -287,7 +325,7 @@ export function Gallery<T extends LightboxItem>({
           track.jump(i)
           if (follow.current) {
             track.panStart()
-            follow.current = { from: 0, at: i }
+            follow.current = { start: i, from: 0, at: i }
           }
         }}
         origin={(i) => {
@@ -325,9 +363,10 @@ function Slide({
   ratio,
   natural,
   width,
+  left,
   x,
   at,
-  step,
+  reach,
   radius,
   fade,
   show,
@@ -343,9 +382,12 @@ function Slide({
   ratio: number
   natural: { width: number; height: number }
   width: number
+  /** Where it sits in the box when it's the current one, centred. */
+  left: number
   x: MotionValue<number>
   at: number
-  step: number
+  /** How far its neighbours sit, after and before it. */
+  reach: [number, number]
   radius: number
   fade: boolean
   /** Whether to load the picture yet. */
@@ -354,14 +396,14 @@ function Slide({
   content?: ReactNode
   onOpen: () => void
 }) {
-  const place = useTrackPlace(x, at, [step, step])
+  const place = useTrackPlace(x, at, reach)
   const current = at === 0
   return (
     <m.button
       type="button"
       className="rml-gallery-slide"
       data-index={index}
-      style={{ x: place.left, opacity: fade ? place.opacity : 1, width, borderRadius: radius }}
+      style={{ x: place.left, left, opacity: fade ? place.opacity : 1, width, borderRadius: radius }}
       tabIndex={current ? 0 : -1}
       aria-hidden={!current || undefined}
       aria-label={label}
