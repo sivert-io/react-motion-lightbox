@@ -35,3 +35,63 @@ test('shown in full on either side, two photos each way are drawn, copies and al
   await expect(page.locator('.rml-count')).toHaveText('1 / 2')
   expect(await places(page)).toEqual([[-2, 0], [-1, 1], [0, 0], [1, 1], [2, 0]])
 })
+
+// Each slide's left and right edge and its item, left to right, relative to the box.
+const edges = (page: import('@playwright/test').Page) =>
+  page.locator('.rml-gallery-box').evaluate((box) => {
+    const b = box.getBoundingClientRect()
+    return [...box.querySelectorAll<HTMLElement>('.rml-gallery-slide')]
+      .map((el) => {
+        const r = el.getBoundingClientRect()
+        return { i: Number(el.dataset.index), l: r.left - b.left, r: r.right - b.left, w: b.width }
+      })
+      .sort((a, c) => a.l - c.l)
+  })
+
+// Wide and tall photos at their own widths: the gap between each pair is the
+// same, and whichever is current sits in the middle of the box.
+test('with natural widths, every gap is the same and the current photo is centred', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide')
+  const check = async (current: number) => {
+    const slides = await edges(page)
+    const widths = new Set(slides.map((s) => Math.round(s.r - s.l)))
+    expect(widths.size).toBeGreaterThan(1)
+    for (let k = 1; k < slides.length; k++) expect(slides[k].l - slides[k - 1].r).toBeCloseTo(10, 0)
+    const mid = slides.find((s) => s.i === current && Math.abs((s.l + s.r) / 2 - s.w / 2) < 1)
+    expect(mid).toBeTruthy()
+  }
+  await expect(page.locator('.rml-count')).toHaveText('1 / 6')
+  await check(0)
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect(page.locator('.rml-count')).toHaveText('2 / 6')
+  await page.waitForTimeout(200)
+  await check(1)
+  // A drag left lands the next one in the middle too.
+  const box = (await page.locator('.rml-gallery-box').boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 - 200, box.y + box.height / 2, { steps: 10 })
+  await page.mouse.up()
+  await expect(page.locator('.rml-count')).toHaveText('3 / 6')
+  await page.waitForTimeout(800)
+  await check(2)
+})
+
+// The lightbox opens out of, and closes back into, the photo's own slide.
+test('with natural widths, the lightbox closes back into the photo it ended on', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide')
+  await page.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).toHaveAttribute('data-moving')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  await page.keyboard.press('ArrowRight')
+  await expect(dialog.locator('.rml-count')).toHaveText('2 / 6')
+  await page.waitForTimeout(800)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.rml-gallery[data-lightbox]')).toHaveCount(0)
+  await expect(page.locator('.rml-gallery-foot .rml-count')).toHaveText('2 / 6')
+  await page.waitForTimeout(200)
+  const slides = await edges(page)
+  const mid = slides.find((s) => s.i === 1 && Math.abs((s.l + s.r) / 2 - s.w / 2) < 1)
+  expect(mid).toBeTruthy()
+})

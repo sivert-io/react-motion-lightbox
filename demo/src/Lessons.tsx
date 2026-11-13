@@ -212,12 +212,14 @@ export function ShapeLesson({ n }: { n: number }) {
   const [whole, setWhole] = useState(false)
   const [peek, setPeek] = useState(false)
   const [fade, setFade] = useState(true)
+  const [own, setOwn] = useState(false)
   const props = [
     shape.aspect !== 1 && `aspect={${shape.code}}`,
     whole && `fit="contain"`,
     peek && 'peek={56} gap={12}',
     !clip && 'clip={false}',
     !clip && !fade && 'fade={false}',
+    own && `slideWidth="natural"`,
   ]
     .filter(Boolean)
     .join(' ')
@@ -255,6 +257,9 @@ export function ShapeLesson({ n }: { n: number }) {
                 Fade at the edges
               </Switch>
             )}
+            <Switch checked={own} onChange={setOwn}>
+              Each photo's own width
+            </Switch>
           </div>
           <div style={{ maxWidth: `min(100%, 60svh * ${shape.aspect})` }}>
             <Gallery
@@ -267,6 +272,7 @@ export function ShapeLesson({ n }: { n: number }) {
               fit={whole ? 'contain' : 'cover'}
               peek={peek ? 56 : 0}
               gap={peek ? 12 : undefined}
+              slideWidth={own ? 'natural' : 'box'}
             />
           </div>
         </div>
@@ -282,6 +288,10 @@ export function ShapeLesson({ n }: { n: number }) {
       <p>
         By default the box cuts photos off at its edges as they slide. Turn <code>clip</code> off and they slide out past
         them, fading as they go. Turn <code>fade</code> off too and they stay in full view, like a carousel.
+      </p>
+      <p>
+        <code>slideWidth="natural"</code> gives each photo its own width at the box's height, so the wide ones and the
+        tall ones sit side by side with the same gap between all of them.
       </p>
       <Code name="Gallery.tsx">{`<Gallery items={photos}${props ? ' ' + props : ''} />`}</Code>
     </Step>
