@@ -35,7 +35,7 @@ test('the close button has a tooltip from its label', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('title', 'Close')
 })
 
-test('the wheel zooms the picture without scrolling the page', async ({ page }) => {
+test('a pinch (Ctrl and the wheel) zooms the picture without scrolling the page, a plain scroll does not', async ({ page }) => {
   await page.goto('/')
   const album = page.locator('#norway')
   await album.scrollIntoViewIfNeeded()
@@ -46,7 +46,14 @@ test('the wheel zooms the picture without scrolling the page', async ({ page }) 
   const before = await page.evaluate(() => scrollY)
   const box = (await view.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  // Two fingers up and down on a trackpad: nothing.
   await page.mouse.wheel(0, -400)
+  await page.waitForTimeout(300)
+  expect(await view.locator('.rml-media:not([aria-hidden])').evaluate((el) => getComputedStyle(el).transform)).toBe('none')
+  // A pinch arrives as a wheel with ctrlKey.
+  await page.keyboard.down('Control')
+  await page.mouse.wheel(0, -400)
+  await page.keyboard.up('Control')
   await page.waitForTimeout(300)
   expect(await page.evaluate(() => scrollY)).toBe(before)
   const scale = await view.locator('.rml-media:not([aria-hidden])').evaluate((el) => getComputedStyle(el).transform)
@@ -169,3 +176,19 @@ for (const variant of ['', '=controls']) {
     expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform)
   })
 }
+
+// Zoomed in, a sideways scroll still moves on to the next picture.
+test('zoomed in, a sideways scroll moves on to the next picture', async ({ page }) => {
+  await page.goto('/')
+  const album = page.locator('#norway')
+  await album.scrollIntoViewIfNeeded()
+  await album.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  await page.keyboard.press('+')
+  await page.waitForTimeout(400)
+  const box = (await dialog.locator('.rml-view').boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  for (let i = 0; i < 10; i++) await page.mouse.wheel(40, 0)
+  await expect(dialog.locator('.rml-count')).toHaveText('2 / 9')
+})

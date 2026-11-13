@@ -13,7 +13,7 @@ import {
   type LightboxItem,
   type LightboxProps,
 } from './Lightbox.js'
-import { GAP, reducedMotion, useTrack, useTrackPlace } from './track.js'
+import { GAP, reducedMotion, useTrack, useTrackPlace, wheelSwipe } from './track.js'
 
 export interface GalleryProps<T extends LightboxItem = LightboxItem>
   extends Omit<LightboxProps<T>, 'index' | 'open' | 'onClose' | 'onExited' | 'origin' | 'originCrop'> {
@@ -165,6 +165,23 @@ export function Gallery<T extends LightboxItem>({
     return dir * d
   }
   const track = useTrack(n, 0, offsets)
+  // A sideways trackpad scroll moves it like a drag. Not React's onWheel:
+  // that listens passively, so it couldn't stop the browser going back a page.
+  const trackRef = useRef(track)
+  trackRef.current = track
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const swipe = wheelSwipe({
+      get many() { return trackRef.current.many },
+      panStart: () => trackRef.current.panStart(),
+      pan: (x) => trackRef.current.pan(x),
+      panEnd: (v) => trackRef.current.panEnd(v),
+    })
+    const listener = (event: WheelEvent) => void swipe(event)
+    el.addEventListener('wheel', listener, { passive: false })
+    return () => el.removeEventListener('wheel', listener)
+  }, [])
   const { index, many, x, go } = track
   const shown = useRef(index)
   useEffect(() => {

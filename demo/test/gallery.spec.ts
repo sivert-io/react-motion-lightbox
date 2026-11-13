@@ -153,3 +153,22 @@ test('the middle photo is hidden while the lightbox is up, and back the moment i
   await page.keyboard.press('Escape')
   expect(await seen).toBe('visible')
 })
+
+// A sideways trackpad scroll moves the track like a drag; up and down are
+// left to the page.
+test('a sideways scroll moves to the next photo, in the gallery and the lightbox', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide')
+  const count = page.locator('.rml-gallery-foot .rml-count')
+  await expect(count).toHaveText('1 / 6')
+  await page.locator('.rml-gallery-box').hover()
+  for (let i = 0; i < 10; i++) await page.mouse.wheel(40, 0)
+  await expect(count).toHaveText('2 / 6')
+  // Until the glide has landed: a click mid-move doesn't open it.
+  await page.waitForTimeout(1000)
+  await page.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  await page.locator('dialog.rml .rml-view').hover()
+  for (let i = 0; i < 10; i++) await page.mouse.wheel(40, 0)
+  await expect(dialog.locator('.rml-count')).toContainText('3 / 6')
+})

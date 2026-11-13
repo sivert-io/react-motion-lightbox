@@ -20,7 +20,7 @@ import {
   type PanInfo,
 } from 'motion/react'
 import * as m from 'motion/react-m'
-import { GAP, useTrack, useTrackPlace } from './track.js'
+import { GAP, useTrack, useTrackPlace, wheelSwipe } from './track.js'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -499,6 +499,21 @@ function View<T extends LightboxItem>({
   // Not React's onWheel: React listens passively, so it can't stop the page
   // scrolling under the lightbox, or a trackpad pinch (a wheel with ctrlKey)
   // zooming the whole page instead of the picture.
+  // Sideways, at 1x, it moves between items like a swipe instead.
+  const trackRef = useRef(track)
+  trackRef.current = track
+  const swipe = useRef(
+    wheelSwipe({
+      get many() { return trackRef.current.many },
+      // Zoomed in, the picture eases back to 1x as it moves off.
+      panStart: () => {
+        if (zoomed()) zoomTo(1, 0, 0)
+        trackRef.current.panStart()
+      },
+      pan: (x) => trackRef.current.pan(x),
+      panEnd: (v) => trackRef.current.panEnd(v),
+    }),
+  )
   const wheel = useRef(onWheel)
   wheel.current = onWheel
   useEffect(() => {
@@ -506,7 +521,19 @@ function View<T extends LightboxItem>({
     if (!el) return
     const listener = (event: WheelEvent) => {
       event.preventDefault()
-      if (!isMoving.current) wheel.current(event)
+      if (isMoving.current) return
+      // A pinch on a trackpad (the browser sends it with ctrlKey), or Ctrl and
+      // the wheel, zooms. A plain scroll never does: on a trackpad that is just
+      // two fingers moving, and it zoomed in by accident.
+      if (event.ctrlKey) return wheel.current(event)
+      // Sideways moves on to the next picture, zoomed in or not.
+      if (swipe.current(event)) return
+      // Up and down, zoomed in, moves around the picture.
+      if (zoomed()) {
+        const [cx, cy] = clampPan(zs.get(), zx.get(), zy.get() - event.deltaY)
+        zx.set(cx)
+        zy.set(cy)
+      }
     }
     el.addEventListener('wheel', listener, { passive: false })
     return () => el.removeEventListener('wheel', listener)
@@ -572,7 +599,9 @@ function View<T extends LightboxItem>({
     zs.set(1 - p * 0.25)
     dialog.current?.style.setProperty('--rml-p', String(1 - Math.min(Math.abs(dy) / (box.height * 0.6 || 1), 1) * 0.8))
   }
+  const overEdge = useRef(false)
   const onPanStart = () => {
+    overEdge.current = false
     if (pinch.current) return
     axis.current = null
     if (zoomed()) {
@@ -585,9 +614,18 @@ function View<T extends LightboxItem>({
     panned.current = true
     if (pinch.current || touches.current.size > 1) return
     if (zoomed()) {
-      const [cx, cy] = clampPan(zs.get(), zoomPan.current.x + info.offset.x, zoomPan.current.y + info.offset.y)
+      const want = zoomPan.current.x + info.offset.x
+      const [cx, cy] = clampPan(zs.get(), want, zoomPan.current.y + info.offset.y)
       zx.set(cx)
       zy.set(cy)
+      // Dragged on past the picture's edge: the rest moves the track, so a
+      // zoomed-in picture can still be swiped on to the next one.
+      const over = want - cx
+      if (Math.abs(over) > 0 && !overEdge.current) {
+        overEdge.current = true
+        track.panStart()
+      }
+      if (overEdge.current) track.pan(over)
       return
     }
     if (!axis.current) {
@@ -598,6 +636,10 @@ function View<T extends LightboxItem>({
     else track.pan(info.offset.x)
   }
   const onPanEnd = (_: unknown, { offset, velocity }: PanInfo) => {
+    if (overEdge.current) {
+      overEdge.current = false
+      return track.panEnd(velocity.x)
+    }
     if (pinch.current || zoomed()) return
     if (axis.current !== 'y') return track.panEnd(velocity.x)
     track.panEnd(0)

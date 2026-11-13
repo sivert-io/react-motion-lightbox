@@ -33,7 +33,8 @@ https://github.com/user-attachments/assets/6dc8bf07-384d-446f-8ed4-877b0d18ccab
 
 - Opens out of the thumbnail when you tell it which one. Without one, it fades in.
 - You can drag the pictures, flick them, and grab one while it's still moving.
-- Zoom with a click or tap on the picture, the scroll wheel, two fingers, or `+` and `-`. A click zooms 2.5x around where you clicked, and another zooms back out. It goes up to 8x.
+- On a laptop, scroll sideways on the trackpad (or hold Shift and use the wheel) to move through them, in the lightbox (zoomed in too) and in the gallery. Scrolling up and down still scrolls the page past the gallery.
+- Zoom with a click or tap on the picture, a pinch (on a trackpad, or Ctrl and the wheel), two fingers, or `+` and `-`. Scrolling up and down doesn't zoom; zoomed in, it moves around the picture. A click zooms 2.5x around where you clicked, and another zooms back out. It goes up to 8x.
 - Esc and the arrow keys work, and so does swiping. While zoomed in, the arrow keys move around the picture.
 - Pull the picture down to close it. It follows your finger and the page shows through; let go far enough or fast enough and it goes back into its thumbnail from there.
 - Nothing responds while the picture is moving in or out.

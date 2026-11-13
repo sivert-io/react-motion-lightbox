@@ -275,3 +275,44 @@ export function useTrackPlace(x: MotionValue<number>, at: number, reach?: [numbe
   useLayoutEffect(() => x.on('change', update), [x, update])
   return { place, left, opacity }
 }
+
+/**
+ * A sideways scroll on a trackpad (or shift and the wheel) moves the track the
+ * way a drag does: it follows the fingers, and when the scroll stops it coasts
+ * to the nearest picture. Up and down are left alone, so the page still
+ * scrolls past it. Returns true when it took the event, so the caller can
+ * leave it alone too.
+ */
+export function wheelSwipe(track: Pick<ReturnType<typeof useTrack>, 'many' | 'panStart' | 'pan' | 'panEnd'>) {
+  let offset = 0
+  let active = false
+  let last = 0
+  let velocity = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return (event: WheelEvent): boolean => {
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerWidth : 1
+    const dx = (event.deltaX || (event.shiftKey ? event.deltaY : 0)) * unit
+    if (!track.many || Math.abs(dx) <= Math.abs(event.shiftKey ? 0 : event.deltaY) || dx === 0) return false
+    event.preventDefault()
+    const now = performance.now()
+    if (!active) {
+      active = true
+      offset = 0
+      velocity = 0
+      track.panStart()
+    } else if (now > last) {
+      velocity = (-dx / (now - last)) * 1000
+    }
+    last = now
+    offset -= dx
+    track.pan(offset)
+    clearTimeout(timer)
+    // No more events for a moment: the fingers (and the momentum after them)
+    // have stopped.
+    timer = setTimeout(() => {
+      active = false
+      track.panEnd(velocity)
+    }, 120)
+    return true
+  }
+}
