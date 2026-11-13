@@ -128,13 +128,13 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `gap` | The space between pictures, in pixels. Default `48`. |
 | `slideWidth` | `'box'` (the default) makes every slide the box's width. `'natural'` makes each one its picture's own width at the box's height, never wider than the box, so wide and tall pictures sit side by side with exactly `gap` between them. Pair it with `clip={false} fade={false}` for a carousel. |
 | `minSlideAspect`, `maxSlideAspect` | With `slideWidth="natural"`, the narrowest and widest a slide may be, as its width over the box's height. A picture past either one fills its slide, cropped to its `focus` and `zoom` like `fit="cover"`, so every slide is the box's full height. Default: no limit. |
-| `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. |
+| `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. It's called before the browser paints, so anything you change lands in the same frame as the lightbox. The gallery already hides its own middle picture while the lightbox is up. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `renderSlide(item, index)` | Draw what's in a slide yourself, in place of its picture: if your app loads pictures its own way or puts a menu on them. The slide stays the button that opens the lightbox or calls `onPress`. |
 | `clip` | Cut pictures off at the box's edges as they slide. Default `true`. Set it to `false` and they slide past the edges and fade out instead. |
 | `fade` | With `clip={false}`, whether pictures fade as they leave the box. Default `true`. Set it to `false` and they stay fully visible on either side, like a carousel. Whatever the gallery sits in decides how far out they show. |
 
-`className` goes on both the gallery and the lightbox. A video shows its `poster`, or your own player if you pass `renderVideo`. `active` is true for the one on screen. If you build a gallery of your own, `cropOf(item, aspect)` gives you the same crop.
+Click a picture beside the middle one and the gallery moves to it. Only a click on the middle one opens the lightbox. `className` goes on both the gallery and the lightbox. A video shows its `poster`, or your own player if you pass `renderVideo`. `active` is true for the one on screen. If you build a gallery of your own, `cropOf(item, aspect)` gives you the same crop.
 
 ## Props
 
