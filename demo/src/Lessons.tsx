@@ -213,6 +213,7 @@ export function ShapeLesson({ n }: { n: number }) {
   const [peek, setPeek] = useState(false)
   const [fade, setFade] = useState(true)
   const [own, setOwn] = useState(false)
+  const [capped, setCapped] = useState(false)
   const props = [
     shape.aspect !== 1 && `aspect={${shape.code}}`,
     whole && `fit="contain"`,
@@ -220,6 +221,7 @@ export function ShapeLesson({ n }: { n: number }) {
     !clip && 'clip={false}',
     !clip && !fade && 'fade={false}',
     own && `slideWidth="natural"`,
+    own && capped && 'minSlideAspect={3 / 4} maxSlideAspect={4 / 3}',
   ]
     .filter(Boolean)
     .join(' ')
@@ -260,6 +262,11 @@ export function ShapeLesson({ n }: { n: number }) {
             <Switch checked={own} onChange={setOwn}>
               Each photo's own width
             </Switch>
+            {own && (
+              <Switch checked={capped} onChange={setCapped}>
+                Keep widths in a range
+              </Switch>
+            )}
           </div>
           <div style={{ maxWidth: `min(100%, 60svh * ${shape.aspect})` }}>
             <Gallery
@@ -273,6 +280,8 @@ export function ShapeLesson({ n }: { n: number }) {
               peek={peek ? 56 : 0}
               gap={peek ? 12 : undefined}
               slideWidth={own ? 'natural' : 'box'}
+              minSlideAspect={own && capped ? 3 / 4 : undefined}
+              maxSlideAspect={own && capped ? 4 / 3 : undefined}
             />
           </div>
         </div>
@@ -291,7 +300,9 @@ export function ShapeLesson({ n }: { n: number }) {
       </p>
       <p>
         <code>slideWidth="natural"</code> gives each photo its own width at the box's height, so the wide ones and the
-        tall ones sit side by side with the same gap between all of them.
+        tall ones sit side by side with the same gap between all of them. <code>minSlideAspect</code> and{' '}
+        <code>maxSlideAspect</code> keep the widths in a range: a photo past either one fills its slide, cropped to
+        its focus and zoom, so every slide is just as tall.
       </p>
       <Code name="Gallery.tsx">{`<Gallery items={photos}${props ? ' ' + props : ''} />`}</Code>
     </Step>

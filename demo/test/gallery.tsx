@@ -20,5 +20,7 @@ createRoot(document.getElementById('root')!).render(
     fade={!wide}
     aspect={sized ? 16 / 9 : 1}
     slideWidth={sized ? 'natural' : 'box'}
+    fit={params.has('contain') ? 'contain' : 'cover'}
+    maxSlideAspect={Number(params.get('max') ?? Infinity)}
   />,
 )
