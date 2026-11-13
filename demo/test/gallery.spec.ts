@@ -115,3 +115,41 @@ test('with a max slide aspect, a wide photo fills a slide cut to the limit', asy
   await page.keyboard.press('Escape')
   await expect(page.locator('.rml-gallery[data-lightbox]')).toHaveCount(0)
 })
+
+// A click on a photo beside the middle one brings it to the middle, the way
+// the arrows do. Only the middle one opens the lightbox.
+test('a click on a photo at the side moves to it instead of opening it', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide')
+  await expect(page.locator('.rml-gallery-foot .rml-count')).toHaveText('1 / 6')
+  await page.locator('.rml-gallery-slide[data-index="1"]').first().click()
+  await expect(page.locator('.rml-gallery-foot .rml-count')).toHaveText('2 / 6')
+  await expect(page.locator('dialog.rml')).toHaveCount(0)
+  await page.waitForTimeout(300)
+  await page.locator('.rml-gallery-slide:not([aria-hidden])').click()
+  await expect(page.locator('dialog.rml')).toBeVisible()
+})
+
+// The gallery hides its middle photo while the lightbox's copy of it is up,
+// and shows it again in the same frame the copy goes: never neither, never both.
+test('the middle photo is hidden while the lightbox is up, and back the moment it goes', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide')
+  const slide = page.locator('.rml-gallery-slide:not([aria-hidden])')
+  await slide.click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  expect(await slide.evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden')
+  // Checked as the dialog leaves the page, before the browser paints.
+  const seen = page.evaluate(
+    () =>
+      new Promise<string>((done) => {
+        const watch = new MutationObserver(() => {
+          if (document.querySelector('dialog.rml')) return
+          watch.disconnect()
+          done(getComputedStyle(document.querySelector('.rml-gallery-slide:not([aria-hidden])')!).visibility)
+        })
+        watch.observe(document.body, { childList: true })
+      }),
+  )
+  await page.keyboard.press('Escape')
+  expect(await seen).toBe('visible')
+})

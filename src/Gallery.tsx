@@ -194,7 +194,8 @@ export function Gallery<T extends LightboxItem>({
   // Closing counts as open for the slideshow, which waits until the picture is back.
   const [lightbox, setLightbox] = useState<'open' | 'closing' | 'closed'>('closed')
   const open = lightbox !== 'closed'
-  useEffect(() => {
+  // Before the paint, so an app can swap things in and out in the same frame as the lightbox.
+  useLayoutEffect(() => {
     onLightboxChange?.(lightbox)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox])
@@ -286,8 +287,11 @@ export function Gallery<T extends LightboxItem>({
                       ? renderVideo(items[i], { active: offset === 0 })
                       : undefined
                 }
+                hidden={open && offset === 0}
                 onOpen={() => {
                   if (dragged.current) return
+                  // A picture beside the middle one comes to the middle; only the middle one opens.
+                  if (offset !== 0) return track.show(i)
                   track.jump(i)
                   if (onPress) return onPress(i)
                   track.panStart()
@@ -384,6 +388,7 @@ function Slide({
   radius,
   fade,
   show,
+  hidden,
   content,
   onOpen,
 }: {
@@ -406,6 +411,8 @@ function Slide({
   fade: boolean
   /** Whether to load the picture yet. */
   show: boolean
+  /** While the lightbox's copy of it is on screen, so there is only ever one. */
+  hidden: boolean
   /** Drawn by the app in place of the picture: its own slide, or its own video player. */
   content?: ReactNode
   onOpen: () => void
@@ -417,7 +424,7 @@ function Slide({
       type="button"
       className="rml-gallery-slide"
       data-index={index}
-      style={{ x: place.left, left, opacity: fade ? place.opacity : 1, width, borderRadius: radius }}
+      style={{ x: place.left, left, opacity: fade ? place.opacity : 1, width, borderRadius: radius, visibility: hidden ? 'hidden' : undefined }}
       tabIndex={current ? 0 : -1}
       aria-hidden={!current || undefined}
       aria-label={label}

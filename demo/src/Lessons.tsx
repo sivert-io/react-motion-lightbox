@@ -304,6 +304,7 @@ export function ShapeLesson({ n }: { n: number }) {
         <code>maxSlideAspect</code> keep the widths in a range: a photo past either one fills its slide, cropped to
         its focus and zoom, so every slide is just as tall.
       </p>
+      <p>With the neighbours in view, click one and it slides to the middle. Click the middle one to open it.</p>
       <Code name="Gallery.tsx">{`<Gallery items={photos}${props ? ' ' + props : ''} />`}</Code>
     </Step>
   )
