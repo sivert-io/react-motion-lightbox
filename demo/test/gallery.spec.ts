@@ -95,3 +95,23 @@ test('with natural widths, the lightbox closes back into the photo it ended on',
   const mid = slides.find((s) => s.i === 1 && Math.abs((s.l + s.r) / 2 - s.w / 2) < 1)
   expect(mid).toBeTruthy()
 })
+
+// Past `maxSlideAspect` a wide photo is cut to the limit and filled, so it is
+// as tall as the rest instead of letterboxed, and the gaps stay the same.
+test('with a max slide aspect, a wide photo fills a slide cut to the limit', async ({ page }) => {
+  await page.goto('/test/gallery.html?n=6&natural&wide&contain&max=1.5')
+  await expect(page.locator('.rml-gallery-foot .rml-count')).toHaveText('1 / 6')
+  const slides = await edges(page)
+  for (let k = 1; k < slides.length; k++) expect(slides[k].l - slides[k - 1].r).toBeCloseTo(10, 0)
+  const wide = page.locator('.rml-gallery-slide[data-index="0"]').first()
+  const [slide, img] = await wide.evaluate((el) => [el.getBoundingClientRect(), el.querySelector('img')!.getBoundingClientRect()].map((r) => ({ w: r.width, h: r.height })))
+  expect(slide.w / slide.h).toBeCloseTo(1.5, 1)
+  expect(img.h).toBeGreaterThanOrEqual(slide.h - 1)
+  expect(img.w).toBeGreaterThan(slide.w)
+  // It opens and closes back into its slide.
+  await wide.click()
+  const dialog = page.locator('dialog.rml')
+  await expect(dialog).not.toHaveAttribute('data-moving')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.rml-gallery[data-lightbox]')).toHaveCount(0)
+})

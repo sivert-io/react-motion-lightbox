@@ -59,6 +59,14 @@ export interface GalleryProps<T extends LightboxItem = LightboxItem>
    * exactly `gap` between them. Most useful with `clip` and `fade` off.
    */
   slideWidth?: 'box' | 'natural'
+  /**
+   * With `slideWidth="natural"`, the narrowest and widest a slide may be, as its
+   * width over the box's height. A picture past either limit fills its slide,
+   * cropped to its `focus` and `zoom` the way `fit="cover"` does, so every
+   * slide stays the box's full height. Defaults: no limit.
+   */
+  minSlideAspect?: number
+  maxSlideAspect?: number
   /** Called with the picture's index on a click, instead of opening the lightbox: for an app with a viewer of its own. */
   onPress?: (index: number) => void
   /**
@@ -91,6 +99,8 @@ export function Gallery<T extends LightboxItem>({
   peek = 0,
   gap = GAP,
   slideWidth = 'box',
+  minSlideAspect = 0,
+  maxSlideAspect = Infinity,
   onPress,
   onLightboxChange,
   renderSlide,
@@ -132,10 +142,14 @@ export function Gallery<T extends LightboxItem>({
   const boxWidth = width - peek
   const height = boxWidth / aspect
   const sized = slideWidth === 'natural'
+  const ownAspect = (i: number) => natural(items[i]).width / natural(items[i]).height
+  // Past `minSlideAspect` or `maxSlideAspect`, a slide is cut to the limit and its picture cropped to fill it.
+  const clamped = (i: number) => sized && (ownAspect(i) < minSlideAspect || ownAspect(i) > maxSlideAspect)
   const widthOf = (i: number) => {
-    const { width: w, height: h } = natural(items[i])
-    return sized ? Math.min(boxWidth, Math.round((height * w) / h)) : boxWidth
+    const r = Math.min(Math.max(ownAspect(i), minSlideAspect), maxSlideAspect)
+    return sized ? Math.min(boxWidth, Math.round(height * r)) : boxWidth
   }
+  const cover = (i: number) => fit === 'cover' || clamped(i)
   const aspectOf = (i: number) => (sized ? widthOf(i) / height : aspect)
   const crop = (i: number) => cropOf({ ...items[i], ...natural(items[i]) }, aspectOf(i))
   const offsets = (i: number): [number, number] => {
@@ -254,7 +268,7 @@ export function Gallery<T extends LightboxItem>({
                 item={items[i]}
                 index={i}
                 label={items[i].alt || `${i + 1} / ${n}`}
-                crop={fit === 'cover' ? crop(i) : undefined}
+                crop={cover(i) ? crop(i) : undefined}
                 ratio={aspectOf(i)}
                 natural={natural(items[i])}
                 width={widthOf(i)}
@@ -330,9 +344,9 @@ export function Gallery<T extends LightboxItem>({
         }}
         origin={(i) => {
           const slide = box.current?.querySelector(`[data-index="${i}"]`)
-          return slide && fit === 'contain' ? contained(i, slide.getBoundingClientRect()) : slide
+          return slide && !cover(i) ? contained(i, slide.getBoundingClientRect()) : slide
         }}
-        originCrop={fit === 'cover' ? crop : undefined}
+        originCrop={(i) => (cover(i) ? crop(i) : undefined)}
       />
     </div>
   )

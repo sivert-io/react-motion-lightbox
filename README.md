@@ -127,6 +127,7 @@ It takes the same props as the lightbox and passes them on. On top of those:
 | `peek` | How many pixels of the next picture show at the right edge, so it reads as something to swipe. Default `0`. |
 | `gap` | The space between pictures, in pixels. Default `48`. |
 | `slideWidth` | `'box'` (the default) makes every slide the box's width. `'natural'` makes each one its picture's own width at the box's height, never wider than the box, so wide and tall pictures sit side by side with exactly `gap` between them. Pair it with `clip={false} fade={false}` for a carousel. |
+| `minSlideAspect`, `maxSlideAspect` | With `slideWidth="natural"`, the narrowest and widest a slide may be, as its width over the box's height. A picture past either one fills its slide, cropped to its `focus` and `zoom` like `fit="cover"`, so every slide is the box's full height. Default: no limit. |
 | `onLightboxChange(state)` | `'open'`, `'closing'` or `'closed'`. Use it to move things on the page out of the lightbox's way. |
 | `onPress(index)` | Called on a click instead of opening the lightbox, if your app has its own viewer. A drag never counts as a click. |
 | `renderSlide(item, index)` | Draw what's in a slide yourself, in place of its picture: if your app loads pictures its own way or puts a menu on them. The slide stays the button that opens the lightbox or calls `onPress`. |
