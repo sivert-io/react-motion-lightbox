@@ -44,6 +44,7 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
   // Where the gliding move will land, so a second press counts on from there.
   const heading = useRef<number | null>(null)
   const queued = useRef<number | null>(null)
+  const queuedDir = useRef<1 | -1 | undefined>(undefined)
   const many = n > 1
   const next = (index + 1) % n
   const prev = (index - 1 + n) % n
@@ -153,29 +154,31 @@ export function useTrack(n: number, start: number, offsets: (index: number) => [
   }
   // A move to any picture, the shorter way round. A neighbour is one step;
   // one further away runs through every picture in between.
-  const show = (to: number) => {
+  const show = (to: number, prefer?: 1 | -1) => {
     const { index } = latest.current
     if (!many) return
     if (reducedMotion()) return jump(to)
     if (moving.current) {
       queued.current = to
+      queuedDir.current = prefer
       return
     }
     if (to === index) return
     const ahead = (to - index + n) % n
     const behind = (index - to + n) % n
-    const dir: 1 | -1 = ahead <= behind ? 1 : -1
+    // A tie (two items) goes the way the arrow or key pointed.
+    const dir: 1 | -1 = ahead === behind && prefer ? prefer : ahead <= behind ? 1 : -1
     const steps = Math.min(ahead, behind)
     if (steps === 1) settle(dir)
     else strip(dir, steps, to)
   }
-  const go = (step: 1 | -1) => show(((queued.current ?? heading.current ?? latest.current.index) + step + n) % n)
+  const go = (step: 1 | -1) => show(((queued.current ?? heading.current ?? latest.current.index) + step + n) % n, step)
   // After each landing, a move that was waiting.
   useEffect(() => {
     if (moving.current || queued.current === null) return
     const to = queued.current
     queued.current = null
-    show(to)
+    show(to, queuedDir.current)
     // Runs when a move has landed; `show` is this render's, with its offsets.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index])
