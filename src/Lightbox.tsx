@@ -808,8 +808,9 @@ function View<T extends LightboxItem>({
             <div ref={frame} className="rml-frame" style={here}>
               {/* Keyed by item, not by place, so the one moving into the middle
                   stays the same element and never reloads. */}
-              {many && prev !== next && (
-                <Picture key={prev} item={items[prev]} size={sizeOf(items[prev])} at={-prevOffset} x={x} radius={radius} renderVideo={renderVideo} />
+              {/* With two items the same one is on both sides, so the left copy needs its own key. */}
+              {many && (
+                <Picture key={prev === next ? `twin-${prev}` : prev} item={items[prev]} size={sizeOf(items[prev])} at={-prevOffset} x={x} radius={radius} renderVideo={renderVideo} />
               )}
               <Picture
                 key={index}

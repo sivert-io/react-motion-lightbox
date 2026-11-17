@@ -192,3 +192,23 @@ test('zoomed in, a sideways scroll moves on to the next picture', async ({ page 
   for (let i = 0; i < 10; i++) await page.mouse.wheel(40, 0)
   await expect(dialog.locator('.rml-count')).toHaveText('2 / 9')
 })
+
+test('with two items the other one waits on both sides, and ← glides the other way to →', async ({ page }) => {
+  await page.goto('/test/one.html?n=2')
+  const view = page.locator('.rml-view')
+  await expect(view.locator('img').first()).toBeVisible()
+  await page.waitForTimeout(700)
+  const middle = (await view.boundingBox())!.x + (await view.boundingBox())!.width / 2
+  const sides = await view.locator('.rml-media[aria-hidden]').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().x))
+  expect(sides.some((x) => x < middle)).toBe(true)
+  expect(sides.some((x) => x > middle)).toBe(true)
+
+  const current = () => view.locator('.rml-media:not([aria-hidden])').evaluate((el) => el.getBoundingClientRect().x)
+  for (const [key, sign] of [['ArrowLeft', 1], ['ArrowRight', -1]] as const) {
+    const before = await current()
+    await page.keyboard.press(key)
+    await page.waitForTimeout(150)
+    expect(Math.sign((await current()) - before)).toBe(sign)
+    await page.waitForTimeout(800)
+  }
+})
